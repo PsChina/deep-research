@@ -1,69 +1,71 @@
 # deep-research
 
-> 一个用于 Claude Code 的「深度研究」技能：像资深顾问一样工作 —— 理解问题 → 产出研究计划 → 多源迭代验证（自带反方与交叉核实）→ 交付一份有判断、有依据、可追溯的报告。
+**English** · [简体中文](README.zh-CN.md)
 
-普通的一问一答容易给你一个"听起来对"的答案。深度研究不同：它会**提出假设、派多个独立 researcher 分头查证、主动找反方、核对时效**，最后给出带置信度和"什么情况下这个结论会错"的判断。适合选型、调研、对比、投资/购买决策这类**不能拍脑袋**的问题。
+> A "deep research" skill for Claude Code: works like a senior consultant — understand the question → produce a research plan → verify iteratively across multiple sources (with built-in dissent and cross-checking) → deliver a report with a judgment, evidence, and traceable sources.
 
-## 三步工作流
+A plain Q&A easily hands you an answer that *sounds* right. Deep research is different: it forms hypotheses, dispatches several independent researchers to verify in parallel, actively hunts for counter-evidence, checks recency, and ends with a judgment that carries a confidence level and "under what conditions this conclusion would be wrong." Good for selection, due diligence, comparison, and investment/purchase decisions — anything you can't afford to wing.
 
-1. **研究计划** —— 复述你的问题 + 初步判断 + 3-5 个研究角度 + 预期深度，先给你看。
-   - **默认展示后 60 秒自动开始**；这期间你可以改计划，或直接回「立即开始」马上跑。
-   - 一开始就在命令里写「立即开始」之类，可跳过等待直奔执行。
-2. **自主研究** —— 派 sub-agent 分头检索、抽取、交叉验证、找反方，按饱和度决定是否再来一轮。启动后不打断。
-3. **交付报告** —— 顾问级分析（有主线、有判断、有可执行下一步），不是检索结果堆砌。
+## Three-step workflow
 
-## 安装
+1. **Research plan** — restate your question + a tentative take + 3-5 angles + expected depth, shown to you first.
+   - **By default it auto-starts 60 seconds after showing the plan.** During that window you can change the plan, or reply "start now" to go immediately.
+   - Put "立即开始 / start now" in the command from the outset to skip the wait entirely.
+2. **Autonomous research** — dispatches sub-agents to search, extract, cross-verify and find dissent in parallel; decides whether to run another round based on saturation. No interruptions once started.
+3. **Deliver report** — consultant-grade analysis (central thesis, judgment, actionable next steps), not a dump of search results.
+
+## Install
 
 ```bash
-# 1) 放到 Claude Code 技能目录
+# 1) Drop it into the Claude Code skills directory
 cp -r deep-research ~/.claude/skills/deep-research
 
-# 2)（可选）装 /deep-research 命令别名：把本仓的 command 文件放到 ~/.claude/commands/
+# 2) (Optional) install the /deep-research command alias: put the command file into ~/.claude/commands/
 ```
 
-之后在 Claude Code 里直接说「深度研究 <主题>」或 `/deep-research <主题>` 即可。
+Then in Claude Code just say "deep research \<topic\>" or `/deep-research \<topic\>`.
 
-## 质量档位
+## Quality tiers
 
-| 档位 | 时长 | researcher | 字数 | 适用 |
+| Tier | Time | researchers | Words | For |
 |---|---|---|---|---|
-| **fast** | 5-10 min | 0（主自跑） | 1000-2500 | 单点深化 / 决策备忘 |
-| **standard**（默认） | 15-30 min | ≥2 | 2500-5000 | 中等调研 / 选型 |
-| **deep** | 40-60 min | ≥4 | 5000-12000 | 系统调研 / 重大决策 |
+| **fast** | 5-10 min | 0 (main agent) | 1000-2500 | single-point deepening / decision memo |
+| **standard** (default) | 15-30 min | ≥2 | 2500-5000 | medium research / selection |
+| **deep** | 40-60 min | ≥4 | 5000-12000 | systematic research / major decisions |
 
-任一硬约束未达标，报告会在开头**诚实标注** `degraded`，绝不假装做满。
+If any hard constraint isn't met, the report **honestly flags** `degraded` up front — it never pretends to have done the full job.
 
-## 五条黄金法则
+## Five golden rules
 
-1. **不编造** —— 每个数字有可追溯来源，不确定就说不确定。
-2. **找反方** —— 主动搜反对观点和失败案例；一面倒 = 没做完。
-3. **标缺口** —— "我不知道 X，所以 Y 的置信度只到 Z"。
-4. **给判断** —— 有中心论点、置信度、可执行下一步。
-5. **可证伪** —— 每个核心结论附带"什么情况下它是错的"。
+1. **No fabrication** — every number has a traceable source; if unsure, say so.
+2. **Find the other side** — actively search counter-views and failure cases; one-sided = not done.
+3. **Mark the gaps** — "I don't know X, so confidence in Y is only Z."
+4. **Give a judgment** — central thesis, confidence, actionable next step.
+5. **Be falsifiable** — every core conclusion ships with "under what conditions it's wrong."
 
-## 自检
+## Self-check
 
-改完技能自身后，跑内置 harness 确认没破坏：
+After changing the skill itself, run the built-in harness:
 
 ```bash
-bash hooks/verify.sh all   # fixture 自测 + 跨文件一致性 + skill 完整性
+bash hooks/verify.sh all   # fixture self-tests + cross-file consistency + skill integrity
 ```
 
-## 文件结构
+## File layout
 
-| 文件 | 用途 |
+| File | Purpose |
 |---|---|
-| `SKILL.md` | 工作流 + 硬约束 + 黄金法则（单一权威源） |
-| `PLAYBOOK.md` | 每个 Phase 的执行细节、researcher prompt、饱和判据 |
-| `REPORT_TEMPLATES.md` | survey / compare / decide / howto 四种报告骨架 |
-| `RUBRIC.md` | Devil's Advocate + 自评打分 |
-| `WRITING_STYLE.md` | 顾问级写作标准 |
-| `experts/` | 按领域的质量维度模板 |
-| `hooks/` | 输出校验脚本 + 自检 harness |
+| `SKILL.md` | workflow + hard constraints + golden rules (single source of truth) |
+| `PLAYBOOK.md` | per-phase execution detail, researcher prompts, saturation criteria |
+| `REPORT_TEMPLATES.md` | survey / compare / decide / howto report skeletons |
+| `RUBRIC.md` | Devil's Advocate + self-scoring |
+| `WRITING_STYLE.md` | consultant-grade writing standard |
+| `experts/` | per-domain quality-dimension templates |
+| `hooks/` | output-validation scripts + self-check harness |
 
-## 方法学基础
+## Methodological basis
 
-工程组合了若干公开研究方法（理解精神、按需运用，不挂名）：ReAct、Reflexion、Self-Ask、CRAG、Step-Back、Toulmin 论证模型，以及对"后段更易出幻觉"的针对性复查。
+An engineering combination of several published research methods (understand the spirit, apply as needed, no name-dropping): ReAct, Reflexion, Self-Ask, CRAG, Step-Back, the Toulmin argument model, plus targeted re-checking for "later sections hallucinate more."
 
 ## License
 
