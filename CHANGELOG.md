@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## v5.6.1 — 2026-06-02 (dogfood plugin-dev / skill-creator 审计后修)
+
+**触发**: 装完官方 skill-creator + plugin-dev 后，用其 `skill-reviewer` agent + 两路独立审计本 skill（skill-creator 的 `quick_validate.py` 因本机缺 PyYAML 跳过）。两路**独立共识**指向同一缺陷：frontmatter description 零触发语义。
+
+**修改**:
+
+1. **description 加触发 + 边界（major，两路共识）**：原 description 全是「做什么 + 方法论清单（ReAct/Reflexion/...）」、无「何时该用/不该用」——skill 自动路由只读 description，导致漏触发（调研/论证利弊）+ 误触发（「X 是什么」单点事实、how-to），估触发准确率 ~67%。改为补正向触发词（选型/对比/调研/评估/综合/核实）+ 负向边界（单点事实/写代码/计算/how-to 不要用），删方法论清单（正文「学术基础」表本就有）。净字数持平、不臃肿，估准确率升至 ~95%。
+2. **Step 0 行 29 拆行 + 「现状如何」消歧（minor）**：方向已锁那条从 ~140 字单行拆成「指令 + ①② + guard」嵌套 bullet（v5.6 加 guard 撑大的最难读行）；「X 现状如何」原既当行 29 已锁正例又当行 30 survey 伪装句，自相矛盾——行 29 改用明确单值例「X 的当前版本/配置是什么」，「现状如何」专归行 30 待定。
+3. **删 Extract 后处理 item 4 悬挂残句（既有 bug）**：`跳过 = [no-schema-validate] degraded。` 末尾误粘的 `（std≥2, deep≥3），补搜。`（从 item 3 复制残留，非本次引入）删除。
+
+**不做**: PLAYBOOK 未改，header v5.6 不动；命令文件 `/deep-research` 的 description 是显式调用、不受自动触发影响，不动。
+
 ## v5.6 — 2026-06-02 (方向闸：方向锁定自主直跑 + Step 0 瘦身)
 
 **触发**: 方向毫无更改空间的问题（如「Anthropic 为啥见天重置我额度，我正常应该周六上午 11 点重置」），还展示计划 + 60s 窗口问研究方向，纯属仪式。v5.5 的「立即开始」要用户显式打字才跳，且 60s 自动推进依赖后台 timer re-wake——在不支持重唤的环境会降级成「等批准」阻塞。
