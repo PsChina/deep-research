@@ -9,7 +9,8 @@ A plain Q&A easily hands you an answer that *sounds* right. Deep research is dif
 ## Three-step workflow
 
 1. **Research plan** — restate your question + a tentative take + 3-5 angles + expected depth, shown to you first.
-   - **By default it auto-starts 60 seconds after showing the plan.** During that window you can change the plan, or reply "start now" to go immediately.
+   - **Clear-direction questions with nothing for you to steer** (diagnostic / verification / status, e.g. "why does X do Y") **→ no plan, no prompt, it just starts.**
+   - When direction is open (survey / selection / scope is yours to set), it shows the plan and **auto-starts 60 seconds later**; during that window you can change the plan, or reply "start now" to go immediately.
    - Put "立即开始 / start now" in the command from the outset to skip the wait entirely.
 2. **Autonomous research** — dispatches sub-agents to search, extract, cross-verify and find dissent in parallel; decides whether to run another round based on saturation. No interruptions once started.
 3. **Deliver report** — consultant-grade analysis (central thesis, judgment, actionable next steps), not a dump of search results.

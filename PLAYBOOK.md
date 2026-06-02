@@ -1,4 +1,4 @@
-# PLAYBOOK (v5.5)
+# PLAYBOOK (v5.6)
 
 执行手册。硬约束以 [`SKILL.md`](SKILL.md) 为准。版本演进见 [`CHANGELOG.md`](CHANGELOG.md)。
 
@@ -20,7 +20,7 @@ Phase 4/5: 跳过 (无 DA / 无 QA / 无 judge)
 
 ```
 Phase 0(30s): 3-4 sub_Q, decide→问 tech stack, howto→问 runtime, 没答记 clarify_assumed
-Phase 1(2m): step-back + Discovery Bootstrap + 审批窗口 60s 自动 / "立即开始"跳(见 SKILL Step 0)
+Phase 1(2m): step-back + Discovery Bootstrap + 方向闸(已锁直跑 / 待定 60s 窗口,见 SKILL Step 0)
 Phase 2(5-10m): spawn ≥2 researcher, 每 prompt 含 sub_Q + seeds + 反方 + schema
 Phase 3(2-3m): REFLECT → 决定 Round 2
 Phase 4(5-8m): 综合 findings → outline → 写正文 (Toulmin ≥4), 每 2000 字 refresh evidence
@@ -33,7 +33,7 @@ Phase 7: 抽样 30% LLM-judge
 
 ```
 Phase 0(30s): ≥5 sub_Q, "深度/系统/全面/对比" 信号
-Phase 1(2m): step-back + Discovery Bootstrap (5 维度) + 审批窗口 60s 自动(可改/立即开始)后自主推进
+Phase 1(2m): step-back + Discovery Bootstrap (5 维度) + 方向闸(已锁直跑 / 待定 60s 窗口,见 SKILL Step 0)后自主推进
 Phase 2.6(2m): Freshness & Coverage Sweep (独立 sub-agent)
 Phase 2.8(30s): Dispatch Gate — 显式输出 checklist 确认派工
 Phase 3(10-15m): spawn ≥4 researcher (强推理), max_searches=20, max_extracts=12
@@ -215,4 +215,4 @@ severe → 修正后重跑相应 sub_Q。moderate → 加 Qualifier/Rebuttal。m
 
 ---
 
-**版本**: v5.5。硬约束以 SKILL.md 为准。**最后更新**: 2026-06-01
+**版本**: v5.6。硬约束以 SKILL.md 为准。**最后更新**: 2026-06-02
