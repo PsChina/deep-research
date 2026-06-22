@@ -64,7 +64,7 @@ description: 生产级多步深度研究。像资深顾问一样工作: 理解�
 2. **Freshness & Coverage Sweep**（deep tier 必跑）：派独立 sub-agent，任务只有两个——
    - **时效性扫描**：搜过去 90 天的相关新发布/新数据/新事件（不限于"产品发布"，含研究报告、政策变化、市场事件）
    - **覆盖度补盲**：检查 Discovery Bootstrap 结果中是否遗漏了特定地区/语言/阵营的来源（如仅覆盖英文源则补中文/其他语言源）
-3. **Dispatch**：显式确认 sub_Q 全部映射到 researcher 后，同帧 spawn 所有 researcher（standard ≥2, deep ≥4），每个独立 context
+3. **Dispatch**：显式确认 sub_Q 全部映射到 researcher 后，同帧 spawn 所有 researcher（standard ≥2, deep ≥4）；researcher ≥3 时优先用 Workflow 并行编排，让强模型自主发挥调度能力
 4. **REFLECT**：所有 researcher 返回后，按下方 REFLECT 强制清单逐项检查 → 判断是否饱和 → 决定是否 Round 2
 5. 重复直到不再发现实质性新信息
 
