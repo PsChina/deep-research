@@ -13,19 +13,25 @@
 | P4.5 atomic fact-check(短/单 claim) | **Panel of 3** 多数票 | PoLL (arXiv:2404.18796): 短任务 panel 7× 便宜更准 |
 | P5 抽样 claim 级评分 | **Panel of 3** | 同上 |
 
-## 6 维 Rubric
+## 8 维 Rubric (v6.0)
 
 | 维度 | 权重 | 0.0 | 0.5 | 1.0 |
 |---|---|---|---|---|
-| factual_accuracy | 30% | 多处事实错 | 局部错无致命 | 全 claim 经 evidence verify |
-| citation_accuracy | 25% | 引用乱/造假 | 多数正确 | 100% 对应, 无 broken |
-| completeness | 20% | 多 sub_Q 未覆盖 | 主线覆盖 / 边缘缺 | 全 sub_Q 回应, 缺口显式标 |
-| source_quality | 15% | 全 SEO / Reddit | 混合 | 主体 official_doc / academic |
+| factual_accuracy | 25% | 多处事实错 | 局部错无致命 | 全 claim 经 evidence verify |
+| citation_accuracy | 20% | 引用乱/造假 | 多数正确 | 100% 对应, 无 broken |
+| completeness | 15% | 多子方向未覆盖 | 主线覆盖 / 边缘缺 | 全方向回应, 缺口显式标 |
+| source_quality | 12% | 全 SEO / Reddit | 混合 | 主体 official_doc / academic |
 | source_diversity | 5% | ≤2 域名 | 3-4 | ≥5 + ≥1 异见 |
-| topic_drift | 5% | >30% 偏离 | 10-30% | <10% + 全 section 可追溯 sub_Q |
+| topic_drift | 3% | >30% 偏离 | 10-30% | <10% + 全 section 可追溯 |
+| **frame_audit** 🆕 | 10% | 未执行换框自审 | 执行但未发现关键盲区 | 盲区检测完整 + 盲区已填补 |
+| **review_closure** 🆕 | 10% | 未执行评审/跳过 | 评审了但未处理 severe | 所有 critical/severe 已修正 |
 
-**Overall** = 0.30·fa + 0.25·ca + 0.20·co + 0.15·sq + 0.05·sd + 0.05·td
+**Overall** = 0.25·fa + 0.20·ca + 0.15·co + 0.12·sq + 0.05·sd + 0.03·td + 0.10·frame + 0.10·review
 阈值: Pass 0.75 / Excellent 0.85 / Museum 0.92
+
+### v6 新增维度说明
+- **frame_audit**: 评估 Phase 2 换框自审质量和盲区检测完整性
+- **review_closure**: 评估 Phase 3→4 评审闭环——发现的问题是否被处理
 
 ## Adaptive Per Template (从 topic_drift 拆 5%)
 

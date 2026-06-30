@@ -1,33 +1,36 @@
-# REPORT TEMPLATES (v5.0)
+# REPORT TEMPLATES (v6.0)
 
 > 硬约束以 [`SKILL.md`](SKILL.md) 为准。字数以 SKILL.md Tier 表为准。
 
-4 模板。P2 选定,P4 按骨架 outline,P6 按风格渲染。字数以 SKILL.md Tier 表为准。
-
-## 字数 by Tier
-
-| Tier | 字数 | 章节 |
-|---|---|---|
-| fast | 1000-2500 | 4-6 |
-| standard | 2500-5000 | 6-10 |
-| **deep** | **5000-12000** | **10-15** |
-
-不达下限 → `word_count_check: fail` + `degraded: true` + TL;DR 前告知。超上限 → outline 压缩。**禁止灌水**(每段 inline cite,每节明确论点)。
-
-## 模板选择
-
-```
-"X 是什么 / 现状 / 历史"        → SURVEY
-"X vs Y / 选哪个"              → COMPARE
-"该不该做 X / 值得吗"          → DECIDE
-"怎么做 X / how-to"            → HOWTO
-```
-
-## 通用结构 (v3.1 升级)
+## 通用结构 (v6.0)
 
 ```
 ---
 <frontmatter (SKILL.md §Frontmatter)>
+---
+
+## 1. Central Thesis
+一句核心判断 + 反事实（什么情况下这个判断是错的）
+
+## 2. 核心发现
+按论证逻辑组织，非按 sub_Q 罗列
+
+## 3. 竞争格局 / 对比分析（如适用）
+
+## 4. 风险与反方视角
+
+## 5. 顾问判断 + 可执行下一步
+
+## 6. 信息缺口
+
+## 7. 追问钩子
+
+## 附录: 研究过程摘要
+- Phase 1: 好奇循环 {N} 轮，发现 {M} 个分类维度
+- Phase 2: 深度推理 {K} 子循环，换框自审发现 {J} 个盲区
+- Phase 3: {R} 个 reviewer 评审，overall_verdict: {verdict}
+- Phase 4: {S} 条 severe 已修正，{M} 条 moderate 标 known-limitation
+```
 ---
 
 # <Action Title 报告标题>

@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## v6.0 — 2026-06-30（架构级重构）
+
+**触发**: v5 流水线架构遗漏 GLM/智谱 AI 案例暴露两个结构性问题——(1) Discovery Bootstrap 一次性 A-F 六维度无法发现「未知类别」，(2) 被动缺口标 `[gap]` 不追搜解疑。
+
+**核心变更**:
+1. **架构**: Pipeline → 四阶段递归研究（好奇循环 → 深度推理 → 同行评审 → 采纳优化 → 输出报告）
+2. **deep-research 角色**: 全流程 orchestrator → 可调用工具
+3. **Phase 2 新增换框自审**: 强制检测分类框架盲区
+4. **Phase 3 同行评审必跑**: 独立 sub-agent 对抗验证（利益冲突隔离）
+5. **并行优先**: 所有独立子任务同帧 spawn，[core] 方向 2 个交叉验证，其余 1 个
+6. **停止条件**: REFLECT 清单 → 边际收益 vs 边际成本（多信号综合）
+
+**文件变更**: SKILL.md 重写, PLAYBOOK.md 重写, ARCHITECTURE_v6.md 新增, RUBRIC.md 更新, REPORT_TEMPLATES.md 小幅更新
+
+---
+
 ## v5.6.1 — 2026-06-02 (dogfood plugin-dev / skill-creator 审计后修)
 
 **触发**: 装完官方 skill-creator + plugin-dev 后，用其 `skill-reviewer` agent + 两路独立审计本 skill（skill-creator 的 `quick_validate.py` 因本机缺 PyYAML 跳过）。两路**独立共识**指向同一缺陷：frontmatter description 零触发语义。

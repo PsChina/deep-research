@@ -1,212 +1,326 @@
-# PLAYBOOK (v5.6)
+# PLAYBOOK (v6.0)
 
-执行手册。硬约束以 [`SKILL.md`](SKILL.md) 为准。版本演进见 [`CHANGELOG.md`](CHANGELOG.md)。
-> **Phase↔Step 映射**：Step 0(Phase 0) → Step 1(Phase 1-4) → Step 2(Phase 5-7)。Phase 编号沿用 PLAYBOOK 历史；硬约束以 SKILL.md 为准。
+四阶段递归研究操作手册。硬约束以 [`SKILL.md`](SKILL.md) 和 [`ARCHITECTURE_v6.md`](ARCHITECTURE_v6.md) 为准。
+
 ---
 
-## 执行概览（三 Tier）
-
-### Fast Tier (5-10min, 主自跑)
+## 执行概览
 
 ```
-Phase 0(15s): 子问题 1-3, 默认跳 clarify
-Phase 1(1m): step-back 1 句 + 1-3 sub_Q
-Phase 2(3-5m): 主 agent batch_search ≤5 并行, 每 sub_Q ≥2 extract, 总 ≥5 extract
-Phase 3(2-3m): 写报告 1000-2500 字, 每段 cite + so-what
-Phase 4/5: 跳过 (无 DA / 无 QA / 无 judge)
-```
-
-### Standard Tier (15-30min, ≥2 researcher)
-
-```
-Phase 0(30s): 3-4 sub_Q, decide→问 tech stack, howto→问 runtime, 没答记 clarify_assumed
-Phase 1(2m): step-back + Discovery Bootstrap + 方向闸(见 SKILL Step 0)
-Phase 2(5-10m): spawn ≥2 researcher, 每 prompt 含 sub_Q + seeds + 反方 + schema
-Phase 3(2-3m): REFLECT → 决定 Round 2
-Phase 4(5-8m): 综合 findings → outline → 写正文 (Toulmin ≥4), 每 2000 字 refresh evidence
-Phase 5(2-3m): QA sub-agent (fact-check + logic + DA 合并, 可选)
-Phase 6(3-5m): 渲染 + frontmatter + verify.sh scan
-Phase 7: 抽样 30% LLM-judge
-```
-
-### Deep Tier (40-60min, ≥4 researcher, 强推理模型)
-
-```
-Phase 0(30s): ≥5 sub_Q, "深度/系统/全面/对比" 信号
-Phase 1(2m): step-back + Discovery Bootstrap (6 维度) + 方向闸(见 SKILL Step 0)
-Phase 2.6(2m): Freshness & Coverage Sweep (独立 sub-agent)
-Phase 2.8(30s): Dispatch Gate — 显式输出 checklist 确认派工
-Phase 3(10-15m): spawn ≥4 researcher (强推理), max_searches=20, max_extracts=12
-Phase 3.7(3-5m): REFLECT 必跑, ≥2 round, 按 SKILL REFLECT 清单 5+1 项
-Phase 4(10-15m): 综合 + outline + Toulmin 6 ≥4 + Rebuttal ≥3 + Logic Self-Check 6 项
-Phase 5(3-5m): QA sub-agent (推荐)
-Phase 6: frontmatter + verify.sh scan
-Phase 7: 抽样 20% 或 --eval LLM-judge
+Phase 1: 好奇循环     → 探索生态，发现维度
+Phase 2: 深度推理     → 换框自审，盲区检测，形成判断
+Phase 3: 同行评审     → 独立对抗验证
+Phase 4: 采纳优化     → 逐条修正
+Phase 5: 输出报告     → 顾问级交付
 ```
 
 ---
 
-## Phase 1 — 计划与研究设计
+## Phase 1：好奇循环
 
-### Step-Back
+### 进入条件
+- 用户触发 deep-research
+- 或被 Phase 2/3/4 作为子循环 spawn
 
-先退一步理解核心矛盾，再拆解子问题 (arXiv:2310.06117)。
-
-### Discovery Bootstrap（生态/市场 topic 必跑）
-
-按 SKILL.md 的 A-F 六维度批量搜索建图。**禁止凭记忆枚举玩家**。跳过 = `[no-discovery-bootstrap]` degraded。
-
-### 模板特定默认问
-
-| template | 必问 | 默认假设 |
-|---|---|---|
-| decide | "你的技术栈是什么?" | JS/TS 全栈 |
-| howto | "运行时 / 部署目标 / 团队规模?" | local dev / 1 人 |
-| compare | "成本 / 性能 / 学习曲线 哪条优先?" | 综合权衡 |
-| survey | "时间窗口 / 行业 / 受众层次?" | 2024-2026 / 通用工程 |
-
-用户没答 → 走默认 + TL;DR 末尾显式标假设。
-
-### 中英双语
-
-topic 含 [中国/国内/A股/港股/政策] → 中英各一轮 batch_search。
-
----
-
-## Phase 2.6 — Freshness & Coverage Sweep
-
-> **触发**: deep tier。详见 SKILL.md Step 1 §2。
-
-派独立 sub-agent，双任务：(a) 过去 90 天时效性扫描 (b) 覆盖度补盲（语言/地区缺口）。跳过 = `[sweep-ignored]` degraded。
-
----
-
-## Phase 2.8 — Dispatch Gate
-
-Phase 3 搜索开始**前**，主 agent 显式输出：
+### 操作流程
 
 ```
-🔴 Dispatch Gate:
-[ ] sub_Q 已全部映射到 researcher? 预期 spawn ___ 个 (std≥2, deep≥4)
-[ ] 每个 researcher 有独立 query_seeds (含反方 query)?
-[ ] 主 agent 确认 Phase 3-5 不亲自搜索?
-[ ] 所有 researcher 同帧并行 spawn?
+Round 0 — 极宽搜索（建立初始生态图）
+─────────────────────────────────────
+主 agent: 生成 2-3 条极宽 query（无产品名/公司名）
+         例: "AI coding agent company landscape 2026"
+              "lesser known open source AI coding tools 2026"
+         → 调 deep-research(topic, scope="broad")
+         → 返回 → 建立初始实体图和分类维度
+
+Round 1+ — 结构化扩展
+─────────────────────────────────────
+1. 主 agent: 基于已有框架，生成 3-6 个 curiosity_questions
+   - 使用 v5 A-F 六维度作为初始模板（可动态增减）
+   - 维度 C 强制 ≥2 种公司类型分搜
+   - query 不含具体产品名/公司名
+
+2. 主 agent: 标注每个 question 类型
+   [core] → 影响中央判断 → 2 sub-agent
+   [fill] → 填充性覆盖   → 1 sub-agent
+   [verify] → 验证性搜索 → 1 sub-agent
+   每轮 [core] ≤2 个
+
+3. 🔴 同帧并行 spawn:
+   每个 question → 1 次 deep-research 调用
+   [core] question → 2 次 deep-research 调用（不同 query seeds）
+   deep-research 内部: spawn researcher sub-agent → 搜+读+摘录 → 返回 findings
+
+4. 综合（所有返回后）:
+   - 跨 sub-agent URL 去重
+   - [core] 方向: 2 个 sub-agent 的 findings 交叉验证
+     - 一致 → 置信度提升
+     - 矛盾 → 标 [conflict]，列为 Phase 2 深挖点
+   - 更新: 实体图、分类维度、curiosity_questions 队列
+
+5. 判断: 边际收益还值得吗？
+   ┌─ 本轮发现新分类维度？ → 继续
+   ├─ 本轮有实体改变理解？ → 继续
+   ├─ 连续 2 轮无新维度且新实体全 filler？ → 收敛
+   ├─ 达硬上限？(fast=1, std=3, deep=5) → 收敛
+   └─ 否则 → 继续
 ```
 
-未过此 gate → 禁止进入 Phase 3。
+### 退出条件
+- 连续 2 轮无新分类维度
+- 或新实体全 filler
+- 或达硬迭代上限
+- → 输出: `{实体图, 分类维度, 开放问题, [conflict] 标记}` → 进入 Phase 2
 
 ---
 
-## Phase 3 — 派工研究
+## Phase 2：深度推理循环
 
-### Researcher 派工
+### 进入条件
+- Phase 1 收敛
+- 或被 Phase 2/3/4 作为子循环 spawn
 
-- 同帧 spawn 所有 researcher，每个独立 context
-- 使用 SKILL.md 中的 Researcher Prompt 模板（含 output schema + Tool Fallback + Extract 后处理）
-- 每个 researcher: ≤20 search, ≤12 extract (deep)
+### 🔴 换框自审（强制首步）
 
-### Extract Gate
+```
+主 agent 回答以下 4 问（这是主 agent 少数亲自做的事之一）:
 
-每 sub_Q extract 数: fast ≥1, standard ≥2, deep ≥3。不达标 → 补派 follow-up extract。
+1. 我目前用什么分类框架理解这个领域？
+2. 如果换一个学科/市场/视角，会用什么不同框架？
+3. 有没有「我根本不知道存在的类别」？
+4. 我的分类框架本身有哪些盲区？
 
-### 🔴 Researcher Output Validator（v5.2，代码执行）
+输出: {已发现盲区, 需填补方向, 需深挖矛盾}
+```
 
-每个 researcher 返回 JSON 后，主 agent 立即跑 `python3 hooks/validate_researcher_output.py <output.json> --json`。
-- **fail** → 退回 researcher 重出（最多 1 次，仍 fail 标 `[schema-fail]` partial）
-- **warn**（resilience 不达标）→ 放行但标 warning
-- **pass** → 放行
+### 操作流程
 
-校验三级：Schema（必填字段）/ Dedup（before ≥ after）/ Resilience（≥50% 成功）。跳过 = `[no-schema-validate]` degraded。
+```
+每轮:
+1. 换框自审 → 产出盲区 + 矛盾 + 弱支撑列表
 
-## Phase 3.7 — REFLECT & Saturation
+2. 标注类型:
+   [core] 盲区/矛盾 → 2 sub-agent
+   [fill] 盲区/矛盾 → 1 sub-agent
+   [verify] 弱支撑    → 1 sub-agent
 
-### REFLECT 流程
+3. 🔴 同帧并行 spawn:
+   [core] 盲区     → 2× 子好奇循环 (Phase 1)
+   [fill] 盲区     → 1× 子好奇循环
+   [core] 矛盾     → 2× 子深度推理 (Phase 2)
+   [fill] 矛盾     → 1× 子深度推理
+   [verify] 弱支撑 → 1× 验证搜索
 
-所有 researcher 返回后：
-1. 交叉验证 findings，标记冲突
-2. 评估信息饱和：是否还在发现实质性新信息？
-3. 生成 Round 2 子问题（比 Round 1 更窄更深）
-4. deep tier 必跑 ≥2 轮
+4. 综合（所有返回后）:
+   - 交叉验证 [core] 方向
+   - 更新 Central Thesis + 反事实
+   - 标注每个结论的置信度 (HIGH/MEDIUM/LOW)
+   - 检查: 每个核心结论 ≥2 独立来源？
 
-### Saturation Checklist → 见 SKILL.md REFLECT 强制清单
+5. 自我拷问:
+   - 「这个判断有没有我不敢质疑的假设？」
+   - 「如果判断是错的，最可能因为哪个假设不成立？」
+   - 「有没有第 3 种解释我没考虑到？」
 
-| 项 | 判据 |
-|---|---|
-| **Coverage** | 所有 sub_Q 有 ≥tier_min extract，无空白 |
-| **Diversity** | ≥3 独立域名，≥1 异见源 |
-| **Dissent** | 每条 sub_Q 至少 1 条反方 finding |
-| **Recency** | 最新来源在 6 个月内（快变化领域）/ 12 个月（慢变化） |
-| **Gap Close** | Round 2 的新发现 ≤ Round 1 的 20% |
+6. 再次换框自审 → 有新盲区？→ 继续 / 无 → 收敛
+```
 
-### False-Saturation 防护
-
-以下信号说明未真正饱和：
-- 所有 finding 同向（echo chamber）
-- 只搜了 1 轮就停 → 强制再搜 1 轮
-- 来源全来自同一生态位（如全 vendor 博客）
+### 退出条件
+- 换框自审无新发现
+- Central Thesis 可证伪 + 每个核心结论 ≥2 源
+- 反方视角已充分纳入（非 echo chamber）
+- 或达硬上限（≤4 子循环）
+- → 输出: `{Central Thesis, 反事实, 置信度, 证据链}` → 进入 Phase 3
 
 ---
 
-## Phase 4 — 综合与写作
+## Phase 3：同行评审
 
-### 综合流程
+### 进入条件
+- Phase 2 收敛
 
-1. **Schema Drift**: 统一所有 researcher 的 source_type/confidence 口径
-2. **Source Dedup (v5.1)**：跨 researcher 按 source_url 分组。同一 URL 被 ≥2 researcher 引用 → 合并（保留最完整 evidence_span + 标注 `cross_researcher: true`）。
-3. **Aggregate**: 合并同主题 findings
-4. **Cross-Validate**: 矛盾 findings → 仲裁（优先 HIGH confidence + official_doc）
-5. **Outline**: 按论证逻辑链组织，不按 sub_Q 编号罗列
-6. **写作**: 遵循 [`WRITING_STYLE.md`](WRITING_STYLE.md)
+### 🔴 必须独立 sub-agent
 
-### Logic Self-Check（6 项，60s 主 agent 自检）
+主 agent 不得自审。派独立 sub-agent（fresh context），只传:
+- Phase 2 的核心判断 + 证据摘要
+- 关键实体和维度
+- 盲区检测结果
+
+### 推荐并行模式 (std/deep)
+
+```
+同帧 spawn 2-3 个 reviewer:
+
+Reviewer A — 证据可靠性:
+  "抽样 3-5 条核心 claim，验证 source 是否真实支撑。
+   找到置信度最低但被当作事实陈述的 claim。"
+
+Reviewer B — 逻辑与框架:
+  "检查假二分、范畴错误、循环论证。
+   检查分类框架是否有遗漏。"
+
+Reviewer C — 覆盖度与遗漏:
+  "检查 echo chamber、利益相关方遗漏、'不做'选项。
+   可 spawn 子好奇循环验证。"
+```
+
+### 输出
+
+```yaml
+review_output:
+  attacks: [{claim_id, severity: critical|severe|moderate|minor, attack_vector, evidence}]
+  echo_chamber_detected: boolean
+  missing_perspectives: [string]
+  logic_flaws: [string]
+  overall_verdict: pass | conditionally_pass | needs_revision
+```
+
+### 退出条件
+- overall_verdict: pass 或 conditionally_pass
+- 或 2 轮评审
+- → 进入 Phase 4
+
+---
+
+## Phase 4：采纳与优化
+
+### 操作流程
+
+```
+1. 读取 Phase 3 评审报告
+
+2. 分类处理:
+   critical + severe → 必须处理
+   moderate → 处理或标 known-limitation
+   minor → 自主决定
+
+3. 🔴 同帧并行 spawn 补证据/重新论证:
+   所有需要补证据的条目 → spawn 子好奇循环
+   所有需要重新论证的条目 → spawn 子深度推理
+
+4. 逐条修正:
+   - 改变结论 → 更新 Central Thesis + 反事实
+   - 弱支撑 → 加引用
+   - 边界不清 → 加 Qualifier
+   - 证据不足 → 降置信度 + 标 [uncertain]
+   - 不修 → 标 [known-limitation]
+
+5. 可选: 再次 Phase 3 评审
+```
+
+### 退出条件
+- 所有 critical+severe 已处理
+- moderate 已处理或标 known-limitation
+- → 进入 Phase 5
+
+---
+
+## Phase 5：输出报告
+
+从研究者切换到写作者。遵循 [`WRITING_STYLE.md`](WRITING_STYLE.md) 和 [`REPORT_TEMPLATES.md`](REPORT_TEMPLATES.md)。
+
+### 输出结构
+1. Central Thesis（一句）+ 反事实
+2. 核心发现（按论证逻辑组织）
+3. 竞争格局/对比分析（如适用）
+4. 风险与反方视角
+5. 顾问判断 + 可执行下一步
+6. 信息缺口标注
+7. 追问钩子
+
+### 质量自检
+- 跑 `hooks/verify.sh scan <report.md>`
+- Logic Self-Check 6 项（见下方）
+
+---
+
+## Logic Self-Check（6 项）
 
 | # | 检查项 | 判据 |
 |---|---|---|
-| 1 | **默认值陷阱** | 推荐"X+Y 最优"时穷举了 X 所有配置选项？ |
-| 2 | **选项完备性** | decide 模板有 ≥2 选项含 fallback？ |
-| 3 | **假二分** | 是否错误地将连续谱系简化为二选一？ |
-| 4 | **范畴错误** | 是否将不同层面的概念放在同一维度比较？ |
-| 5 | **循环论证** | 结论是否依赖自身？ |
-| 6 | **未检验假设** | 是否有隐含前提未在 clarify_assumed 中声明？ |
-
-任一项 fail → 修正后复检。跳过 = `[no-logic-check]` degraded。
-
-### Late-Section Refresh
-
-每 2000 字重新查证 evidence，优先查后半段（arXiv:2505.15291）。
+| 1 | 默认值陷阱 | 推荐配置时穷举了所有选项？ |
+| 2 | 选项完备性 | ≥2 选项含 fallback？ |
+| 3 | 假二分 | 是否将连续谱系简化为二选一？ |
+| 4 | 范畴错误 | 不同层面概念是否放同维比较？ |
+| 5 | 循环论证 | 结论是否依赖自身？ |
+| 6 | 未检验假设 | 隐含前提是否已声明？ |
 
 ---
 
-## Phase 5 — QA Sub-Agent（推荐）
-
-合并 fact-check + logic audit + Devil's Advocate 为一个 sub-agent。评分标准见 [`RUBRIC.md`](RUBRIC.md)。
-
-**派工**: fresh context，输入草稿 + 所有 researcher findings。
+## 递归规则
 
 ```
-你是 Quality Assurance sub-agent。同时做三件事：
-1. Fact Check: 抽样 5 条 claim，验证 source 真支持
-2. Logic Audit: 6 项检查（见 Phase 4 Logic Self-Check）
-3. Devil's Advocate: 攻击最弱 claim + echo chamber + omission + reasoning leap
+Phase 2 可 spawn → Phase 1 (子好奇循环)
+       可 spawn → Phase 2 (子深度推理)
 
-输出: {severity, attacks[], missing_topics[], overall_verdict}
+Phase 3 可 spawn → Phase 1 (验证性搜索)
+       可 spawn → Phase 2 (深挖矛盾)
+
+Phase 4 可 spawn → Phase 1 (补证据)
+       可 spawn → Phase 2 (重新论证)
+
+递归深度硬上限: fast≤1, standard≤2, deep≤3
 ```
-
-severe → 修正后重跑相应 sub_Q。moderate → 加 Qualifier/Rebuttal。minor → 微调。
 
 ---
 
-## Phase 6 — 渲染
+## Dispatch Gate（每次 spawn 子任务前）
 
-1. 按 [`REPORT_TEMPLATES.md`](REPORT_TEMPLATES.md) 选模板渲染
-2. 填 frontmatter 17 必填字段（见 SKILL.md）
-3. 跑 `hooks/verify.sh scan <report.md>`
-4. 不得谎报 quality_audit 字段
+```
+🔴 Dispatch Gate:
+[ ] 所有子任务已标注类型？([core]/[fill]/[verify])
+[ ] [core] 方向 ≤2 个？
+[ ] 所有独立子任务同帧发出？（不等不串行）
+[ ] 每个 deep-research 调用传了 curiosity_questions？
+[ ] 主 agent 本轮不亲自搜/读？
+```
+
+---
+
+## Researcher Output Validator
+
+deep-research 工具内部使用。主 agent 收到 findings 后:
+- 跑 `python3 hooks/validate_researcher_output.py <output.json> --json`
+- fail → 退回重出（最多 1 次）
+- warn（resilience 不达标）→ 放行标 warning
+- pass → 放行
+
+---
+
+## 中英双语
+
+topic 含 [中国/国内/A股/港股/政策] → Phase 1 Round 0 中英各一轮。
+
+---
+
+## Frontmatter
+
+```yaml
+quality_audit:
+  declared_tier: deep
+  actual_tier: deep
+  degraded: false
+  degradation_reasons: []
+  duration_minutes: 47
+  phase1_rounds: 3
+  phase2_sub_loops: 2
+  phase3_reviewers: 3
+  phase3_verdict: pass
+  total_subagents_spawned: 12
+  total_searches: 23
+  total_extracts: 18
+  official_sources: 6
+  dissent_sources: 2
+  newest_source_date: "2026-06-30"
+  geographic_coverage: ["CN", "US", "EU"]
+  word_count: 4500
+```
 
 ---
 
 ## 参考
 
+- 架构设计: [`ARCHITECTURE_v6.md`](ARCHITECTURE_v6.md)
 - 硬约束: [`SKILL.md`](SKILL.md)
 - 写作标准: [`WRITING_STYLE.md`](WRITING_STYLE.md)
 - 模板骨架: [`REPORT_TEMPLATES.md`](REPORT_TEMPLATES.md)
@@ -215,4 +329,4 @@ severe → 修正后重跑相应 sub_Q。moderate → 加 Qualifier/Rebuttal。m
 
 ---
 
-**版本**: v5.6。硬约束以 SKILL.md 为准。**最后更新**: 2026-06-02
+**版本**: v6.0。硬约束以 SKILL.md 和 ARCHITECTURE_v6.md 为准。**最后更新**: 2026-06-30

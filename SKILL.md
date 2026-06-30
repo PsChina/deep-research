@@ -1,15 +1,11 @@
 ---
 name: deep-research
-description: 生产级多步深度研究。像资深顾问一样工作: 理解问题 → 产出研究计划 → 假设驱动迭代验证 → 交付专业报告。适用于选型 / 竞品对比 / 技术调研 / 可行性评估 / 趋势综合 / 核实等需跨多权威源交叉验证的开放问题；单点事实、写代码、纯计算、简单 how-to 不要用。
+description: 四阶段递归深度研究。好奇循环广泛探索 → 深度推理检测盲区 → 同行评审对抗验证 → 采纳优化后交付顾问级报告。适用于选型 / 竞品对比 / 技术调研 / 可行性评估 / 趋势综合等需跨多权威源交叉验证的开放问题；单点事实、写代码、纯计算、简单 how-to 不要用。
 
-> 像资深顾问一样做研究：提出假设 → 派工验证 → 交叉核实 → 形成判断。
-> 执行细节见 [`PLAYBOOK`](PLAYBOOK.md)，写作标准见 [`WRITING_STYLE`](WRITING_STYLE.md)，报告骨架见 [`REPORT_TEMPLATES`](REPORT_TEMPLATES.md)，评分标准见 [`RUBRIC`](RUBRIC.md)。
+> 研究不是流水线，是四个可递归组合的阶段。deep-research 是可调用工具，不是全流程 orchestrator。
+> 架构设计见 [`ARCHITECTURE_v6.md`](ARCHITECTURE_v6.md)，操作手册见 [`PLAYBOOK`](PLAYBOOK.md)，写作标准见 [`WRITING_STYLE`](WRITING_STYLE.md)。
 
-## 🔴 执行前硬门禁（答不出 → 立即停，不进入 Phase 0）
-
-1. 本次 spawn 几个 researcher？（standard ≥2，deep ≥4。**fast 除外，0 = 不是 deep research，停**）
-2. Researcher Prompt 模板（含 output schema）是否已准备复制到派工 prompt？
-3. 是否已有 ≥1 个搜索计划使用 `freshness:"month"` 或 `freshness:"week"`？
+---
 
 ## 触发
 
@@ -17,187 +13,223 @@ description: 生产级多步深度研究。像资深顾问一样工作: 理解�
 - 或问题需要跨多个权威源综合（选型/调研/对比/决策）
 - **不需要深度研究**：单点事实、不依赖时效数据、"个人项目用 React 还是 Vue" → 降级为快速回答
 
-## 三步工作流
+---
 
-### Step 0: 研究计划（方向已锁直跑 / 待定才展示 + 60s 窗口）
+## 架构：四阶段递归研究 + 时效性闸门 + 方向确认
 
-**先自判方向**——一个问题：*有没有只有用户能拍板、且会改变「我研究什么」的方向选择?*
+```
+Phase 0: 方向确认 🔴      → 展示研究计划 + 60s 窗口；方向已锁则跳过
+Phase 1: 好奇循环        → 广泛探索，建立生态图，发现分类维度
+Phase 1.5: 时效性校验 🔴  → 强制闸门：核心数据是否最新？不是 → 回 Phase 1 补搜
+Phase 2: 深度推理循环    → 换框自审 + 盲区检测 + 形成可证伪判断
+Phase 3: 同行评审        → 独立 sub-agent 对抗验证
+Phase 4: 采纳与优化      → 逐条修正评审意见
+Phase 5: 输出报告        → 顾问级分析报告
+```
 
-- **方向已锁 → 不展示计划清单、不起计时器，1-2 行压缩陈述「我理解的问题 + 切入角度」后直奔 Step 1**。命中任一即锁：
-  - ① 诊断/核实/查现状类，且主题 + 要查的具体现象/主张已给全、无实质分叉、无缺会改变全局的约束（如「X 为什么 Y」「X 是不是真的」「X 的当前版本/配置是什么」）；
-  - ② 输入含「立即开始 / 马上开始 / 直接开始 / 不用确认 / 别问了 / skip」。
-  - ⚠️ guard：「现象/主张唯一」≠「归因框架/核实口径唯一」——归因角度、核实口径或覆盖范围多义、选哪个会改写「研究什么」→ 判待定。
-- **方向待定 → 展示计划 + 走 60s 窗口**。命中任一即待定：survey/盘点类（「现状如何 / 有哪些 / 盘点 X」）、选型、研究范围或口径需用户定、问题有多种解读、缺会改变全局的约束。
+**递归关系**：Phase 2/3/4 可 spawn 子 Phase 1（好奇循环）和子 Phase 2（深度推理）。递归深度硬上限：fast ≤1, standard ≤2, deep ≤3。
 
-判不准默认"待定"——错锁方向的代价远大于多等 60s。
+**Phase 1.5 永远不可跳过**——这是从 Phase 1 进入 Phase 2 的硬闸门。
 
-**计划展示（仅待定时）**：我理解的问题 / 初步判断（可推翻）/ 3-5 研究角度 / 预期深度（fast·standard·deep）/ 你会得到什么 / 你能改什么。Phase 0 的 ≤3 澄清问合并进这次一起问。
+---
 
-**60s 窗口**：打 `⏱️ 60s 后自动开始；想改现在说，或回「立即开始」直接跑`。
+## Phase 0：方向确认（Direction Gate）🔴
 
-- 窗内用户回复 → 按意图走：改 → 重规划 / 批准·立即开始 → Step 1 / 不做 → 停。
-- 沉默到期 → Step 1。未答澄清按模板默认走，TL;DR 末尾标 `clarify_assumed`。
+**目标**：研究开始前展示计划 + 60s 窗口，让用户纠正方向。避免「跑完发现不是用户要的」。
+
+### 先自判方向
+
+一个问题：*有没有只有用户能拍板、且会改变「我研究什么」的方向选择？*
+
+- **方向已锁 → 不展示计划清单、不起计时器**：1-2 行压缩陈述「我理解的问题 + 切入角度」后直奔 Phase 1。命中任一即锁：
+  ① 主题 + 要查的具体现象/主张已给全、无实质分叉、无缺会改变全局的约束（诊断/核实/查现状类，如「X 为什么 Y」「X 是不是真的」「X 现状如何」；⚠️「现象/主张唯一」≠「归因框架/核实口径唯一」——归因角度、核实口径或覆盖范围多义、选哪个会改写「研究什么」→ 判待定）；
+  ② 输入含「立即开始 / 马上开始 / 直接开始 / 不用确认 / 别问了 / skip」。
+
+- **方向待定 → 展示计划 + 走 60s 窗口**。命中任一即待定：survey/选型类（含「现状如何 / 有哪些 / 盘点」式伪装句）、研究范围或口径需用户定、问题有多种解读、缺会改变全局的约束。
+
+判不准默认「待定」——错锁方向的代价远大于多等 60s。
+
+### 计划展示（仅待定时）
+
+AI 输出：我理解的问题 / 初步判断（可推翻）/ 3-5 研究角度 / 预期深度（fast·standard·deep）/ 你会得到什么 / 你能改什么。如有澄清问题，合并提出（≤3 个）。
+
+### 60s 窗口
+
+打 `⏱️ 60s 后自动开始；想改现在说，或回「立即开始」直接跑`，跑 `sleep 60`（`run_in_background:true`）让出回合，记住其 task id。
+
+- **窗内用户回复** → **先用该 id `TaskStop` 杀计时器**（漏杀 = 幽灵计时器稍后二次开跑，**头号 bug，先 kill 再动**），再按意图走：改 → 重规划（最多 1 个活跃计时器）/ 批准·立即开始 → Phase 1 / 不做 → 停。
+- **计时器到点或沉默重唤** → Phase 1；先确认本轮未开跑（无本轮 researcher 派工 / Dispatch Gate 记录），已派则忽略防重复。未答澄清按模板默认走，报告末尾标 `clarify_assumed`。
+- **环境不自动重唤** → 降级为「等你批准」（= 老行为，绝不卡死）。
 
 方向已锁 / 批准 / 超时后自主推进，不再打断（例外仅：密钥泄露 / 武器 / 工具完全失败）。
 
-### Step 1: 派工研究（sub-agent 执行，主 agent 只协调）
+---
 
-**🔴 铁律：研究执行阶段主 agent 不直接搜、不直接读。搜索和阅读 100% 由 researcher sub-agent 完成（fast tier 除外）。**
+## Phase 1：好奇循环（Curiosity Loop）
 
-> 主 agent 自己搜 = 单线程 + 无 Devil's Advocate + 无交叉验证 + 上下文污染。
+**目标**：广泛探索，不设预设分类框架。让搜索结果揭示「这个领域怎么分」。
 
-**🔴 最高优先级反模式**：主 agent 自己搜 = 研究作废。发现即停，改派 sub-agent 重跑。
+**角色分工**：
+- 主 agent = 协调者：发问、派工、综合、判断
+- sub-agent = 执行者：搜、读、摘录（不带判断）
 
-**执行流程**：
+**每轮流程**：
+1. 发问：生成 3-6 个 curiosity_questions（无产品名/公司名）
+2. 标注类型：[core]（影响中央判断）→ 派 2 个独立 sub-agent；[fill]/[verify] → 派 1 个
+3. 🔴 同帧并行 spawn 所有 deep-research 工具调用
+4. 综合返回 → 去重、交叉验证、更新框架
+5. 判断边际收益 → 继续/收敛
 
-1. **Discovery Bootstrap**：主 agent 按以下**生态维度**批量搜索建图，**禁止凭记忆拟玩家/产品/关键方清单**：
-   - 维度 A — 领先者/主流方案（行业头部是谁？）
-   - 维度 B — 挑战者/新兴者（谁在快速崛起？）
-   - 维度 C — 地区性/独立玩家（非主流市场/开源/替代方案？）
-   - 维度 D — 反方/失败案例（谁在唱反调？什么已经失败了？）
-   - 维度 E — 开源/独立/非商业生态（哪些重要玩家不在商业产品列表中？开源模型、学术项目、独立开发者工具？）
-   - 维度 F — **换框重搜**：换一种分类框架重搜一遍
-   **每条维度 ≥1 条 query 不含具体产品名**
-   - 每个维度 ≥1 条搜索，其中 ≥1 条必须带 `freshness: "month"`（确保生态图有时效基线）
-   > 对应领域加载 `experts/<domain>.md` 获取搜索模板和权威来源白名单
-1.5 **子问题自审**：换一种框架看你的 sub_Q 拆分——若全属同一认知框架，拆分就是偏的。至少 1 个 sub_Q 用不同角度切入
-2. **Freshness & Coverage Sweep**（deep 必跑，standard 推荐）：派独立 sub-agent，任务只有两个——
-   - **时效性扫描**：搜过去 90 天的相关新发布/新数据/新事件（不限于"产品发布"，含研究报告、政策变化、市场事件）
-   - **覆盖度补盲**：检查 Discovery Bootstrap 结果中是否遗漏了特定地区/语言/阵营的来源（如仅覆盖英文源则补中文/其他语言源）
-3. **Dispatch**：显式确认 sub_Q 全部映射到 researcher 后，同帧 spawn 所有 researcher（standard ≥2, deep ≥4）；researcher ≥3 时优先用 Workflow 并行编排，让强模型自主发挥调度能力
-4. **REFLECT**：所有 researcher 返回后，按下方 REFLECT 强制清单逐项检查 → 判断是否饱和 → 决定是否 Round 2（Step 1 内部编号 Phase 2-4，Step 2 = Phase 5）
-4.5 **对撞**：列出 researcher 之间互相矛盾的发现。冲突数字优先官方一手源→多源交叉验证→降置信度标 `[conflict]`
-5. 重复直到不再发现实质性新信息。连续 2 轮无进展 → 收敛报告，标 `[incomplete]`
+**收敛条件**：连续 2 轮未发现新分类维度 / 新实体全 filler / 达硬上限（fast=1, std=3, deep=5 轮）。
 
-每轮结束自问：「我本轮是否亲自搜了？」是 → 该轮作废，改派 sub-agent。违反 = `[no-subagent]` degraded。
+---
 
-**进度心跳**：每个 Phase 完成时允许 ≤1 句话通知（如"Phase 2 完成，进入 Phase 3"），非阻塞、不等回复。
+## Phase 1.5：时效性校验（Freshness Gate）🔴
 
-#### REFLECT 强制检查清单（每轮 researcher 返回后必过）
+**目标**：Phase 1 收敛后、进入深度推理前，强制验证所有核心数据的时效性。**这是硬闸门，Phase 1.5 不通过不得进入 Phase 2。**
 
-| # | 检查项 | 通过标准 | 不通过动作 |
-|---|---|---|---|
-| 1 | **时效性** | 最新 source_date 在 N 天内（技术/AI/加密 N=30，法律/能源/医疗 N=90，历史/哲学 N=180，不确定 N=90 并标 `n_value_rationale`） | 补搜：`"<topic> latest <current_month> <current_year>"` |
-| 2 | **覆盖度** | ≥2 个地理/语言市场的来源、≥2 类 source_type（official_doc / academic / industry / community） | 补搜缺维度的来源 |
-| 3 | **对立面** | 每个 sub_Q 的 findings 中 ≥1 条 `challenges_thesis: true` | 该 sub_Q 退回 researcher 补搜反方 |
-| 4 | **饱和判断** | 新增 finding 数 ≤ 前轮 30%，且无新方向 | 未饱和 → Round N+1 |
-| 5 | **决策盲区** | 遗漏利益相关方？未考虑"不做"选项？时间窗口假设明确？ | — |
-| 6 | **断言必验** | 概括性断言逐条搜反例 | 有→修正；无→标 `[ncf]` |
+**闸门判定（逐条检查每个 [core] finding）**：
 
-#### Researcher Prompt 模板（🔴 必须使用，禁止即兴写）
-
-> v4.9.3 实测：6 个 researcher 中 5 个因未收到 output schema 返回自然语言而非结构化 JSON。
-
-```
-你是 deep-research researcher sub-agent。唯一任务是研究以下 sub-question 并返回结构化 JSON。
-
-## Sub-question
-<填入 sub_Q>
-
-## Query seeds (每个都搜，含至少1条反方query + 1条时效性query)
-1. "<正向搜索query>"
-2. "<正向搜索query>"
-3. "<反方/批评/失败案例 query>"（deep tier 需 ≥2 条反方 seed）
-4. "<时效性query — 搜过去90天新进展: topic + latest/recent + current_month current_year>"
-
-## Budget
-≤20 WebSearch, ≤12 WebFetch。优先官方来源。Query seed 4（时效性）必须使用 freshness 过滤参数。
-**seed 不够则自主扩展**——4 条只是起点，不是上限。
-
-## Tool Fallback
-anysearch 失败 → 重试1次 → 仍失败 → WebSearch → 仍失败 → WebFetch。禁止凭记忆补 finding。**每个 query seed 独立容错**：一条失败不阻塞其他条。所有 query 跑完后，≥50% 成功才继续写 findings，否则标 `status: partial`。
-
-## Extract 后处理（🔴 必须执行，防重复来源污染）
-1. **URL 去重**：所有 extract 按 URL 分组，同一 URL 只保留 content 最完整的 extract。记录去重前后数量。
-2. **相关性筛选**（🔴 每个 extract 写 ≤3 句为什么与 sub_Q 相关，写不出的丢弃—等同 RAG filter）：每个 extract 标注 `relevance: high|medium|low` + `relevance_reason: "<≤3 句>"`。`low` 的不纳入 findings（记入 exclusion_reasons）。
-3. **去重后数量** 如果 < tier_min（std≥2, deep≥3），补搜。
-4. **🔴 JSON 校验（代码执行）**：输出 JSON 后主 agent 必须跑 `python3 hooks/validate_researcher_output.py <output.json>`。fail → 退回重出（最多 1 次）。跳过 = `[no-schema-validate]` degraded。
-
-## Output schema (🔴 严格按此格式输出JSON)
-{
-  "sub_question": "<sub_Q原文>",
-  "findings": [
-    {
-      "finding_id": "F-<Q编号>-<序号>",
-      "claim": "<一句话事实主张，≤200字>",
-      "evidence_span": "<来源原文关键句，≥50字>",
-      "source_url": "<URL>",
-      "source_type": "official_doc|academic|financial_media|industry_blog|community",
-      "source_date": "YYYY-MM-DD",
-      "confidence": "HIGH|MEDIUM|LOW",
-      "challenges_thesis": true/false
-    }
-  ],
-  "source_funnel": {
-    "identified": <搜索返回总数>,
-    "screened": <去重+标题筛选后>,
-    "extracted": <全文extract数>,
-    "included": <最终纳入findings>,
-    "exclusion_reasons": {"duplicate": N, "irrelevant": N, "paywall": N, "low_quality": N}
-  },
-  "dedup": {"before": <去重前 extract 总数>, "after": <去重后数,必须 ≤ before>},
-  "query_resilience": {"total": <query seed 总数>, "succeeded": <成功条数>, "failed": <失败条数>, "threshold_met": <succeeded ≥ ceil(total×0.5) 则 true,否则 false>},
-  "key_insight": "<1句话总结最重要的发现>"
-}
-```
-
-反方 query 要求：decide/compare → `"regret/reversal/failed <topic>"`；survey/howto → `"criticism/limitation/risk <topic>"`。
-
-时效性 query 要求（seed 4）：格式 `"<topic 核心关键词> <current_month> <current_year> latest"`。快速演进领域（tech/AI/加密等）加 `freshness: "month"`，稳定领域（法律/历史/基础设施等）加 `freshness: "year"`。
-
-### Step 2: 交付报告
-
-顾问级分析，不是 findings dump。有 Central Thesis、有判断、有下一步。
-**Central Thesis 必附反事实**：如果核心判断是错的，最可能因为哪个假设不成立。
-末尾留追问钩子：「对 [具体结论] 想深入？直接说，基于当前研究继续。」
-
-## Tier 定义与硬约束
-
-| Tier | 触发信号 | 时间 | 子问题 | researcher | 总 extract | 总搜索 | 字数 |
-|---|---|---|---|---|---|---|---|
-| **fast** | "快速/大概/简要" + 子问题≤2 | 5-10min | 1-3 | 0（≥2 独立来源，标 `[fast-tier]`） | ≥3 | ≥5 | 1000-2500 |
-| **standard** | 默认 | 15-30min | 3-5 | ≥2 | ≥8 | ≥15 | 2500-5000 |
-| **deep** | "深度/系统/全面/对比" 或 子问题≥5 | 40-60min | 5-8 | ≥4 | ≥15 | ≥30 | 5000-12000 |
-
-**deep 额外硬约束**：反方 query ≥2 / 官方一手源 ≥4 / A-tier 源 ≥20% / vendor/个人博客 ≤40% / 选项 ≥2 含 fallback / REFLECT ≥2 轮。
-
-任一未达 → `degraded: true` + TL;DR 前显式告知。
-
-### Phase 完整性（deep tier）
-
-| Phase | deep tier | 跳过后果 |
+| 检查项 | 判定标准 | 不通过动作 |
 |---|---|---|
-| **Discovery Bootstrap** (Phase 2) | 必跑（按 6 生态维度搜索） | `[no-discovery-bootstrap]` |
-| **Freshness & Coverage Sweep** (Phase 2.6) | 必跑（独立 sub-agent） | `[sweep-ignored]` |
-| **Dispatch Gate** (Phase 2.8) | 必过（显式输出 checklist） | `[dispatch-gate-skipped]` |
-| **REFLECT Round 2** | 必跑（含 6 项强制清单） | `[single-round]` |
-| **Logic Self-Check**（6 项） | 必跑（60s，不 spawn sub-agent） | `[no-logic-check]` |
-> 6 项具体内容见 [`PLAYBOOK.md`](PLAYBOOK.md) Phase 4
-| **QA sub-agent**（fact-check + logic + DA 合并） | 推荐 | 跳过不标 degraded |
-| **LLM-judge** | `--eval` 或抽样 20% | 跳过不标 degraded |
+| **日期锚定** | `source_date` 在 freshness 窗口内（见 Tier 映射表） | spawn 子 Phase 1，query 强制带 `current_month current_year` |
+| **代际检查** | 结论引用的产品/模型/版本是否为**当前最新代际**？（如：还在引用 o3 但 o4 已发布 → 不通过） | 搜索「X latest version/release 2026」确认最新代际，替换过时引用 |
+| **竞品对称性** | 所有核心竞品的基准数据是否来自**同一时期**？（如：A 公司用 2026 Q2 数据，B 公司用 2025 Q1 数据 → 不通过） | 统一拉齐到同一时间窗口重新搜索 |
+| **反方时效** | 反方/批评观点是否也覆盖了**最新版本**？（如：批评的是 2025 版产品，2026 版已修复 → 不通过） | 搜索「X criticism/issues 2026 latest」 |
 
-### Frontmatter（17 必填字段）
+**通过标准**：所有 [core] finding 通过上述 4 项检查。最多 2 轮补搜；2 轮后仍有不通过的，标记为 `[stale-gap]` 并在报告中显式声明「以下结论基于旧数据，置信度降级」。
+
+**输出**：`{stale_findings[], replacement_findings[], gaps_marked_stale[], gate_passed: true/false}`
+
+---
+
+## Phase 2：深度推理循环（Deep Reasoning Loop）
+
+**目标**：带着 Phase 1 的生态图，做深度分析——形成判断、检测盲区、交叉验证。
+
+**🔴 换框自审（强制首步，不可跳过）**：
+1. 我目前用什么分类框架理解这个领域？
+2. 如果换一个学科/市场/视角，会用什么不同框架？
+3. 有没有「我根本不知道存在的类别」？
+4. 我的分类框架本身有哪些盲区？
+
+**每轮流程**：
+1. 换框自审 → 产出 {盲区, 矛盾, 弱支撑}
+2. 标注类型：[core] → 2 sub-agent，其余 → 1
+3. 🔴 同帧并行 spawn 子好奇循环 + 子深度推理 + 验证搜索
+4. 综合 → 更新 Central Thesis + 反事实 + 置信度
+5. 自我拷问 → 继续/收敛
+
+**收敛条件**：盲区填补完毕 + 判断可证伪 + 每个核心结论 ≥2 独立来源 + 非 echo chamber。
+
+---
+
+## Phase 3：同行评审（Peer Review）
+
+**目标**：对抗性验证。🔴 必须派独立 sub-agent（fresh context），主 agent 不得自审。
+
+**推荐并行模式**（std/deep）：同帧 spawn 2-3 个 reviewer——
+- Reviewer A：证据可靠性
+- Reviewer B：逻辑与框架
+- Reviewer C：覆盖度与遗漏
+
+**输出**：`{attacks[], echo_chamber_detected, missing_perspectives[], overall_verdict}`
+
+---
+
+## Phase 4：采纳与优化（Adopt & Optimize）
+
+逐条处理评审意见。critical+severe 必须处理，moderate 建议处理或标 known-limitation。
+需补证据/重新论证的 → 🔴 同帧并行 spawn 子循环。
+
+---
+
+## Phase 5：输出报告
+
+从研究者切换到写作者。不是 findings dump——有 Central Thesis、反事实、置信度、下一步。末尾留追问钩子。
+
+---
+
+## 停止条件
+
+### 各阶段收敛
+
+| 阶段 | 收敛条件 | 硬上限 |
+|---|---|---|
+| Phase 0 | 方向已锁 或 60s 到期 或 用户批准 | — |
+| Phase 1 | 连续 2 轮无新维度 或 新实体全 filler | fast=1, std=3, deep=5 |
+| Phase 1.5 | 所有 [core] finding 通过 4 项时效性检查 | ≤2 轮补搜 |
+| Phase 2 | 盲区填补 + 判断可证伪 + 证据 ≥2 源 | ≤4 子循环 |
+| Phase 3 | overall_verdict: pass 或 conditionally_pass | 2 轮 |
+| Phase 4 | 所有 critical/severe 已处理 | — |
+
+### 反停止信号（任意阶段命中 → 继续）
+
+| 信号 | 直觉 |
+|---|---|
+| 发现新分类维度 | 框架在进化 |
+| 新证据推翻已有结论 | 结论在变化 |
+| 某方向全同向（echo chamber） | 缺反方 |
+| 意外发现重要未知实体 | serendipity |
+| 核心结论只有 1 个来源 | 需验证 |
+| Phase 1.5 检出 stale finding | 数据过时，需补搜最新 |
+
+---
+
+## Workflows 编排铁律
+
+```
+🔴 每个 Phase 内，所有独立子任务必须同帧并行 spawn，不串行。
+
+🔴 冗余策略：
+  [core] 方向（影响 Central Thesis）→ 2 个独立 sub-agent 交叉验证
+  [fill]/[verify] 方向 → 1 个 sub-agent
+  每 Phase 每轮 [core] 方向 ≤2 个（避免冗余爆炸）
+
+🔴 主 agent 只亲自做 3 件事：发问、换框自审、综合判断。
+  其余一切搜/读/摘录/验证 → sub-agent。
+```
+
+---
+
+## deep-research 工具契约
 
 ```yaml
-quality_audit:
-  declared_tier: deep
-  actual_tier: deep
-  degraded: false
-  degradation_reasons: []
-  duration_minutes: 47
-  researcher_spawned: 5
-  total_extracts: 18
-  total_searches: 23
-  phase_2_6_sweep: ran
-  phase_2_8_dispatch: passed
-  phase_reflect_rounds: 2
-  phase_5_qa: ran
-  word_count: 7842
-  official_sources: 6
-  dissent_sources: 2
-  newest_source_date: "2026-05-20"
-  geographic_coverage: ["CN", "US", "EU"]
+deep-research:
+  description: 对指定主题执行一轮聚焦搜索+阅读，返回结构化发现。
+  input:
+    topic: string
+    scope: broad | focused
+    phase: curiosity | deep_reasoning | peer_review | optimize
+    curiosity_questions: [string]     # 🔴 必填
+    known_dimensions: [{name, entities}]
+    known_entities: [{name, type, needs_deep_dive, reason}]
+    max_rounds: number
+    freshness: "month" | "week" | "year"
+  output:
+    findings: [finding]
+    discovered_dimensions: [{name, description, confidence, entity_count}]
+    discovered_entities: [{name, type, confidence, impact, needs_deep_dive}]
+    answered_questions: [string]
+    new_questions: [string]
+    framework_stable: boolean
+    marginal_value: {new_dimensions, decision_affecting, filler}
+    should_continue: boolean
 ```
+
+---
+
+## Tier 映射与并行度
+
+| Tier | 触发 | freshness 窗口 | P1 轮数 | P1 并行 | P2 子循环 | P3 | 总搜索 | 字数 |
+|---|---|---|---|---|---|---|---|---|
+| **fast** | "快速/简要" | **1 年内** | 1 | 1-2 | 0 | 跳过 | ≤5 | 1000-2500 |
+| **standard** | 默认 | **3 个月内** | 3 | 3-5 | ≤2 并行 | 1-2 reviewer | ≤20 | 2500-5000 |
+| **deep** | "深度/全面" | **1 个月内** | 5 | 5-8 | ≤4 并行 | 2-3 reviewer | ≤40 | 5000-12000 |
+
+> 🔴 **freshness 窗口是 Phase 1.5 闸门的判定基准**。所有 [core] finding 的 `source_date` 必须在此窗口内，否则不通过。
+
+---
 
 ## 黄金法则
 
@@ -208,36 +240,83 @@ quality_audit:
 | 3 | **标缺口** | "我不知道 X → Y 判断置信度只到 Z" |
 | 4 | **给判断** | 有 Central Thesis、有置信度标注、有可执行下一步 |
 | 5 | **可证伪** | 每个核心结论附带"什么情况下这个结论是错的" |
-| 6 | **有时效** | 每个 finding 标注 source_date。报告中最老 source 如超过主题 appropriate 阈值 → 显式标注 `[时效风险]` |
+| 6 | **有时效** | 每个 finding 标注 source_date |
+| 7 | **并行优先** | 所有独立子任务同帧发出——不等不串行 |
+| 8 | **核心才冗余** | [core] 方向 2 个交叉验证，其余 1 个——不浪费 |
+| 9 | **主 agent 不搜** | 搜/读/摘录全部走 sub-agent。主 agent 只发问、换框、综合 |
+
+---
 
 ## 反模式
 
 | ❌ | ✅ |
 |---|---|
-| 主 agent 自己搜"看看背景" | 派 sub-agent |
-| Researcher prompt 没写 output schema | 使用本文模板 |
-| anysearch 报 quota 直接放弃 | fallback WebSearch → WebFetch |
-| 推荐默认配置不穷举其他选项 | 穷举所有配置，显式排除论证 |
-| 凭记忆拟玩家清单不跑 Sweep | Discovery Bootstrap + Freshness & Coverage Sweep |
-| 引用论文名但不实际运用方法 | 用方法，不挂名 |
-| 一面倒无反方 | 每条 sub_Q ≥1 反方 query |
-| 报告中引用了产品/模型版本但不检查是否有更新版 | 每个具名实体过 Freshness Audit |
-| 只搜英文源写"全球"结论 | 至少覆盖 ≥2 个语言/地区市场的来源 |
+| 主 agent 自己搜/读 ≥3 个来源 | 调 deep-research 或 spawn sub-agent |
+| 主 agent 串行一个一个发 sub-agent | 同帧并行 spawn——所有独立子任务一起发出 |
+| 所有子方向无差别派 2 个 | [core] 2 个交叉验证，其余 1 个 |
+| 搜索 query 含具体产品/公司名 | 描述性语言：「行业头部」「新兴挑战者」 |
+| Phase 2 跳过换框自审 | 换框自审是强制首步 |
+| Phase 3 主 agent 自审 | 独立 sub-agent（fresh context） |
+| 发现盲区标 `[gap]` 跳过 | spawn 子好奇循环填补 |
+| deep-research 一键生成报告 | 它返回发现，综合和判断在主 agent |
+| 一面倒无反方 | 每条核心方向 ≥1 反方 |
+| Sub-agent 返回 raw dump 原样转用户 | 主 agent 提炼 → 综合 → 判断 → 呈现 |
+| 搜索 query 不限制时效 / 用裸年份 `2025` | 所有 query 带 `current_month current_year`；Phase 1.5 闸门强制校验 |
+| Phase 1 收敛后直接进入 Phase 2 | 必须先过 Phase 1.5 时效性闸门 |
 
-## 学术基础（理解精神，按需运用）
+---
 
-| 成果 | 洞见 | 应用 |
-|---|---|---|
-| **Toulmin** (1958) | 好论证 = Claim + Data + Warrant + Qualifier + Rebuttal | 每段满足 ≥4 要素 |
-| **ReAct** (2210.03629) | 思考与行动交替优于一次性规划 | 搜一轮 → 反思 → 决定下一步 |
-| **Reflexion** (2303.11366) | 自我反思提升下一轮质量 | 每轮结束自问：漏了什么？ |
-| **CRAG** (2401.15884) | 检索内容需评估可靠性 | 不搜到什么信什么 |
-| **Step-Back** (2310.06117) | 先问本质再拆解 | 不退一步直接搜 = frame blindness |
-| **Late-Section Hallucination** (2505.15291) | 后半段幻觉概率显著升高 | 写到后半段重新查证 |
+## Researcher Prompt 模板（deep-research 工具内部使用）
 
-## 工程原创声明
+> 主 agent 调用 deep-research 工具时，工具内部自动使用此模板派 researcher sub-agent。
 
-1 项原创工程贡献（其余均为已有学术方法的工程组合）：dev-time hook harness — `hooks/verify.sh` + fixture 自测。
+```
+你是 deep-research researcher sub-agent。唯一任务是研究以下 sub-question 并返回结构化 JSON。
+
+## Sub-question
+<填入 sub_Q>
+
+## Query seeds (每个都搜，含至少1条反方query + 🔴 所有 query 强制带时效性约束)
+1. "<正向搜索query> + latest + current_month current_year"
+2. "<正向搜索query> + latest + current_month current_year"
+3. "<反方/批评/失败案例 query> + current_month current_year"
+4. "<时效性query: topic + latest/recent + current_month current_year>"
+
+🔴 **时效性约束不是可选的**——所有 query 必须包含 `current_month current_year` 或等价时间锚点。
+禁止使用裸年份（如 `2025`）作为唯一时效性约束——必须精确到月。
+
+## Budget
+≤20 WebSearch, ≤12 WebFetch。优先官方来源。
+
+## Tool Fallback
+anysearch 失败 → 重试1次 → WebSearch → WebFetch。禁止凭记忆补 finding。
+
+## Extract 后处理
+1. URL 去重
+2. 相关性筛选（每个 extract ≤3 句 why relevant，写不出的丢弃）
+3. 去重后 < tier_min 则补搜
+
+## Output schema (🔴 严格按此格式输出JSON)
+{
+  "sub_question": "<sub_Q原文>",
+  "findings": [{
+    "finding_id": "F-<编号>-<序号>",
+    "claim": "<一句话事实主张，≤200字>",
+    "evidence_span": "<来源原文关键句，≥50字>",
+    "source_url": "<URL>",
+    "source_type": "official_doc|academic|financial_media|industry_blog|community",
+    "source_date": "YYYY-MM-DD",
+    "confidence": "HIGH|MEDIUM|LOW",
+    "challenges_thesis": true/false
+  }],
+  "source_funnel": {"identified": N, "screened": N, "extracted": N, "included": N, "exclusion_reasons": {}},
+  "dedup": {"before": N, "after": N},
+  "query_resilience": {"total": N, "succeeded": N, "failed": N, "threshold_met": true},
+  "key_insight": "<1句话总结>"
+}
+```
+
+---
 
 ## 红线
 
@@ -245,4 +324,4 @@ quality_audit:
 
 ## 参考文件
 
-[`PLAYBOOK`](PLAYBOOK.md) 执行 · [`WRITING_STYLE`](WRITING_STYLE.md) 写作 · [`REPORT_TEMPLATES`](REPORT_TEMPLATES.md) 骨架 · [`RUBRIC`](RUBRIC.md) 评分 · [`CHANGELOG`](CHANGELOG.md) 版本
+[`ARCHITECTURE_v6.md`](ARCHITECTURE_v6.md) 架构 · [`PLAYBOOK`](PLAYBOOK.md) 操作手册 · [`WRITING_STYLE`](WRITING_STYLE.md) 写作 · [`REPORT_TEMPLATES`](REPORT_TEMPLATES.md) 骨架 · [`RUBRIC`](RUBRIC.md) 评分 · [`CHANGELOG`](CHANGELOG.md) 版本
