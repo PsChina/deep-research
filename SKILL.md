@@ -13,7 +13,7 @@ description: 生产级多步深度研究。像资深顾问一样工作: 理解�
 
 ## 🔴 执行前硬门禁（答不出 → 立即停，不进入 Phase 0）
 
-1. 本次 spawn 几个 researcher？（standard ≥2，deep ≥4。**0 = 不是 deep research，停**）
+1. 本次 spawn 几个 researcher？（standard ≥2，deep ≥4。**fast 除外，0 = 不是 deep research，停**）
 2. Researcher Prompt 模板（含 output schema）是否已准备复制到派工 prompt？
 3. 是否已有 ≥1 个搜索计划使用 `freshness:"month"` 或 `freshness:"week"`？
 
@@ -72,8 +72,8 @@ description: 生产级多步深度研究。像资深顾问一样工作: 理解�
    - **覆盖度补盲**：检查 Discovery Bootstrap 结果中是否遗漏了特定地区/语言/阵营的来源（如仅覆盖英文源则补中文/其他语言源）
 3. **Dispatch**：显式确认 sub_Q 全部映射到 researcher 后，同帧 spawn 所有 researcher（standard ≥2, deep ≥4）；researcher ≥3 时优先用 Workflow 并行编排，让强模型自主发挥调度能力
 4. **REFLECT**：所有 researcher 返回后，按下方 REFLECT 强制清单逐项检查 → 判断是否饱和 → 决定是否 Round 2
-4.5 **对撞**：列出 researcher 之间互相矛盾的发现。无法调和 → 标 `[conflict]`，降置信度
-5. 重复直到不再发现实质性新信息
+4.5 **对撞**：列出 researcher 之间互相矛盾的发现。冲突数字优先官方一手源→多源交叉验证→降置信度标 `[conflict]`
+5. 重复直到不再发现实质性新信息。连续 2 轮无进展 → 收敛报告，标 `[incomplete]`
 
 每轮结束自问：「我本轮是否亲自搜了？」是 → 该轮作废，改派 sub-agent。违反 = `[no-subagent]` degraded。
 
@@ -109,6 +109,7 @@ description: 生产级多步深度研究。像资深顾问一样工作: 理解�
 
 ## Budget
 ≤15 WebSearch, ≤8 WebFetch。优先官方来源。Query seed 4（时效性）必须使用 freshness 过滤参数。
+**seed 不够则自主扩展**——4 条只是起点，不是上限。
 
 ## Tool Fallback
 anysearch 失败 → 重试1次 → 仍失败 → WebSearch → 仍失败 → WebFetch。禁止凭记忆补 finding。**每个 query seed 独立容错**：一条失败不阻塞其他条。所有 query 跑完后，≥50% 成功才继续写 findings，否则标 `status: partial`。
@@ -173,10 +174,10 @@ anysearch 失败 → 重试1次 → 仍失败 → WebSearch → 仍失败 → We
 
 | Phase | deep tier | 跳过后果 |
 |---|---|---|
-| **Discovery Bootstrap** (Phase 2) | 必跑（按 4 生态维度搜索） | `[no-discovery-bootstrap]` |
+| **Discovery Bootstrap** (Phase 2) | 必跑（按 6 生态维度搜索） | `[no-discovery-bootstrap]` |
 | **Freshness & Coverage Sweep** (Phase 2.6) | 必跑（独立 sub-agent） | `[sweep-ignored]` |
 | **Dispatch Gate** (Phase 2.8) | 必过（显式输出 checklist） | `[dispatch-gate-skipped]` |
-| **REFLECT Round 2** | 必跑（含 4 项强制清单） | `[single-round]` |
+| **REFLECT Round 2** | 必跑（含 5 项强制清单） | `[single-round]` |
 | **Logic Self-Check**（6 项） | 必跑（60s，不 spawn sub-agent） | `[no-logic-check]` |
 | **QA sub-agent**（fact-check + logic + DA 合并） | 推荐 | 跳过不标 degraded |
 | **LLM-judge** | `--eval` 或抽样 20% | 跳过不标 degraded |
@@ -220,7 +221,6 @@ quality_audit:
 | ❌ | ✅ |
 |---|---|
 | 主 agent 自己搜"看看背景" | 派 sub-agent |
-| Phase 4 outline 又问用户确认 | 批准后自主推进 |
 | Researcher prompt 没写 output schema | 使用本文模板 |
 | anysearch 报 quota 直接放弃 | fallback WebSearch → WebFetch |
 | 推荐默认配置不穷举其他选项 | 穷举所有配置，显式排除论证 |
