@@ -49,7 +49,7 @@ description: 生产级多步深度研究。像资深顾问一样工作: 理解�
 
 ### Step 1: 派工研究（sub-agent 执行，主 agent 只协调）
 
-**🔴 铁律：研究执行阶段主 agent 不直接搜、不直接读。搜索和阅读 100% 由 researcher sub-agent 完成。**
+**🔴 铁律：研究执行阶段主 agent 不直接搜、不直接读。搜索和阅读 100% 由 researcher sub-agent 完成（fast tier 除外）。**
 
 > 主 agent 自己搜 = 单线程 + 无 Devil's Advocate + 无交叉验证 + 上下文污染。
 
@@ -66,11 +66,13 @@ description: 生产级多步深度研究。像资深顾问一样工作: 理解�
    - 维度 F — **换框重搜**：换一种分类框架重搜一遍
    **每条维度 ≥1 条 query 不含具体产品名**
    - 每个维度 ≥1 条搜索，其中 ≥1 条必须带 `freshness: "month"`（确保生态图有时效基线）
-2. **Freshness & Coverage Sweep**（deep tier 必跑）：派独立 sub-agent，任务只有两个——
+1.5 **子问题自审**：换一种框架看你的 sub_Q 拆分——若全属同一认知框架，拆分就是偏的。至少 1 个 sub_Q 用不同角度切入
+2. **Freshness & Coverage Sweep**（deep 必跑，standard 推荐）：派独立 sub-agent，任务只有两个——
    - **时效性扫描**：搜过去 90 天的相关新发布/新数据/新事件（不限于"产品发布"，含研究报告、政策变化、市场事件）
    - **覆盖度补盲**：检查 Discovery Bootstrap 结果中是否遗漏了特定地区/语言/阵营的来源（如仅覆盖英文源则补中文/其他语言源）
 3. **Dispatch**：显式确认 sub_Q 全部映射到 researcher 后，同帧 spawn 所有 researcher（standard ≥2, deep ≥4）；researcher ≥3 时优先用 Workflow 并行编排，让强模型自主发挥调度能力
 4. **REFLECT**：所有 researcher 返回后，按下方 REFLECT 强制清单逐项检查 → 判断是否饱和 → 决定是否 Round 2
+4.5 **对撞**：列出 researcher 之间互相矛盾的发现。无法调和 → 标 `[conflict]`，降置信度
 5. 重复直到不再发现实质性新信息
 
 每轮结束自问：「我本轮是否亲自搜了？」是 → 该轮作废，改派 sub-agent。违反 = `[no-subagent]` degraded。
@@ -86,7 +88,7 @@ description: 生产级多步深度研究。像资深顾问一样工作: 理解�
 | 1 | **时效性** | 所有 finding 的 `source_date` 中，最新的一条在 N 天内（快速演进领域 N=30，稳定领域 N=180；主 agent 根据主题自行判断并声明 N 值） | 补搜：`"<topic> latest <current_month> <current_year>"` |
 | 2 | **覆盖度** | ≥2 个地理/语言市场的来源、≥2 类 source_type（official_doc / academic / industry / community） | 补搜缺维度的来源 |
 | 3 | **对立面** | 每个 sub_Q 的 findings 中 ≥1 条 `challenges_thesis: true` | 该 sub_Q 退回 researcher 补搜反方 |
-| 4 | **饱和判断** | 最近一轮新增 finding 数 ≤ 前一轮的 30%，且无全新的实质性信息类别 | 未饱和 → Round N+1 |
+| 4 | **饱和判断** | 新增 finding 数 ≤ 前轮 30%，且无新方向 | 未饱和 → Round N+1 |
 | 5 | **决策盲区** | 自审决策链，自主补盲 | — |
 
 #### Researcher Prompt 模板（🔴 必须使用，禁止即兴写）
@@ -152,6 +154,7 @@ anysearch 失败 → 重试1次 → 仍失败 → WebSearch → 仍失败 → We
 ### Step 2: 交付报告
 
 顾问级分析，不是 findings dump。有 Central Thesis、有判断、有下一步。
+**Central Thesis 必附反事实**：如果核心判断是错的，最可能因为哪个假设不成立。
 末尾留追问钩子：「对 [具体结论] 想深入？直接说，基于当前研究继续。」
 
 ## Tier 定义与硬约束
