@@ -3,6 +3,9 @@ name: deep-research
 description: 生产级多步深度研究。像资深顾问一样工作: 理解问题 → 产出研究计划 → 假设驱动迭代验证 → 交付专业报告。适用于选型 / 竞品对比 / 技术调研 / 可行性评估 / 趋势综合 / 核实等需跨多权威源交叉验证的开放问题；单点事实、写代码、纯计算、简单 how-to 不要用。
 ---
 
+> Codex migration note: imported from `~/.claude/skills/deep-research`. Translate Claude-specific primitives such as `Task(subagent_type=...)`, Claude plugin paths, and Claude hook contracts to Codex equivalents (`AGENTS.md`, skills, `.codex/hooks.json`, MCP, and custom agents) before executing them.
+
+
 # Deep Research
 
 > 像资深顾问一样做研究：提出假设 → 派工验证 → 交叉核实 → 形成判断。
