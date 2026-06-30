@@ -128,8 +128,7 @@ Phase 3 搜索开始**前**，主 agent 显式输出：
 3. 生成 Round 2 子问题（比 Round 1 更窄更深）
 4. deep tier 必跑 ≥2 轮
 
-### Saturation Checklist → 统一使用 SKILL.md REFLECT 强制清单（5+1 项）
-> 以下为历史参考，与 SKILL REFLECT 不一致时以后者为准：
+### Saturation Checklist → 见 SKILL.md REFLECT 强制清单
 
 | 项 | 判据 |
 |---|---|

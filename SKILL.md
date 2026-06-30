@@ -1,6 +1,6 @@
 ---
 name: deep-research
-description: 生产级多步深度研究。
+description: 生产级多步深度研究。像资深顾问一样工作: 理解问题 → 产出研究计划 → 假设驱动迭代验证 → 交付专业报告。适用于选型 / 竞品对比 / 技术调研 / 可行性评估 / 趋势综合 / 核实等需跨多权威源交叉验证的开放问题；单点事实、写代码、纯计算、简单 how-to 不要用。
 
 > 像资深顾问一样做研究：提出假设 → 派工验证 → 交叉核实 → 形成判断。
 > 执行细节见 [`PLAYBOOK`](PLAYBOOK.md)，写作标准见 [`WRITING_STYLE`](WRITING_STYLE.md)，报告骨架见 [`REPORT_TEMPLATES`](REPORT_TEMPLATES.md)，评分标准见 [`RUBRIC`](RUBRIC.md)。
@@ -170,7 +170,7 @@ anysearch 失败 → 重试1次 → 仍失败 → WebSearch → 仍失败 → We
 | **Discovery Bootstrap** (Phase 2) | 必跑（按 6 生态维度搜索） | `[no-discovery-bootstrap]` |
 | **Freshness & Coverage Sweep** (Phase 2.6) | 必跑（独立 sub-agent） | `[sweep-ignored]` |
 | **Dispatch Gate** (Phase 2.8) | 必过（显式输出 checklist） | `[dispatch-gate-skipped]` |
-| **REFLECT Round 2** | 必跑（含 5 项强制清单） | `[single-round]` |
+| **REFLECT Round 2** | 必跑（含 6 项强制清单） | `[single-round]` |
 | **Logic Self-Check**（6 项） | 必跑（60s，不 spawn sub-agent） | `[no-logic-check]` |
 > 6 项具体内容见 [`PLAYBOOK.md`](PLAYBOOK.md) Phase 4
 | **QA sub-agent**（fact-check + logic + DA 合并） | 推荐 | 跳过不标 degraded |
@@ -237,7 +237,7 @@ quality_audit:
 
 ## 工程原创声明
 
-2 项原创工程贡献（其余均为已有学术方法的工程组合）：(1) `inference_chain` finding 字段 — 推理从 dump → 可审计日志；(2) dev-time hook harness — `hooks/verify.sh` + fixture 自测。
+1 项原创工程贡献（其余均为已有学术方法的工程组合）：dev-time hook harness — `hooks/verify.sh` + fixture 自测。
 
 ## 红线
 
