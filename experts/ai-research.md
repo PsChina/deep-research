@@ -10,7 +10,7 @@
 
 1. **官方 API 文档 > 第三方教程** — provider 官方 doc 是最高权威
 2. **有 benchmark 数据的 > 主观评价** — 量化对比优先
-3. **2025+ 来源 > 旧版** — AI 领域变化极快，2024 之前的内容可能已过时
+3. **最近一年 > 1年前** — AI 领域变化极快，一年前的内容可能已过时
 4. **独立 benchmark > 厂商自报** — LMSYS Chatbot Arena / GAIA / BrowseComp 等第三方评测优先
 
 ## 搜索 query 模板

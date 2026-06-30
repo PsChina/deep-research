@@ -1,12 +1,6 @@
 ---
 name: deep-research
-description: 生产级多步深度研究。像资深顾问一样工作: 理解问题 → 产出研究计划 → 假设驱动迭代验证 → 交付专业报告。适用于选型 / 竞品对比 / 技术调研 / 可行性评估 / 趋势综合 / 核实等需跨多权威源交叉验证的开放问题；单点事实、写代码、纯计算、简单 how-to 不要用。
----
-
-> Codex migration note: imported from `~/.claude/skills/deep-research`. Translate Claude-specific primitives such as `Task(subagent_type=...)`, Claude plugin paths, and Claude hook contracts to Codex equivalents (`AGENTS.md`, skills, `.codex/hooks.json`, MCP, and custom agents) before executing them.
-
-
-# Deep Research
+description: 生产级多步深度研究。
 
 > 像资深顾问一样做研究：提出假设 → 派工验证 → 交叉核实 → 形成判断。
 > 执行细节见 [`PLAYBOOK`](PLAYBOOK.md)，写作标准见 [`WRITING_STYLE`](WRITING_STYLE.md)，报告骨架见 [`REPORT_TEMPLATES`](REPORT_TEMPLATES.md)，评分标准见 [`RUBRIC`](RUBRIC.md)。
@@ -39,11 +33,10 @@ description: 生产级多步深度研究。像资深顾问一样工作: 理解�
 
 **计划展示（仅待定时）**：我理解的问题 / 初步判断（可推翻）/ 3-5 研究角度 / 预期深度（fast·standard·deep）/ 你会得到什么 / 你能改什么。Phase 0 的 ≤3 澄清问合并进这次一起问。
 
-**60s 窗口**：打 `⏱️ 60s 后自动开始；想改现在说，或回「立即开始」直接跑`，跑 `sleep 60`（`run_in_background:true`）让出回合，记住其 task id。
+**60s 窗口**：打 `⏱️ 60s 后自动开始；想改现在说，或回「立即开始」直接跑`。
 
-- 窗内用户回复 → **先用该 id `TaskStop` 杀计时器**（漏杀 = 幽灵计时器稍后二次开跑，**头号 bug，先 kill 再动**），再按意图走：改 → 重规划（最多 1 个活跃计时器）/ 批准·立即开始 → Step 1 / 不做 → 停。
-- 计时器到点或沉默重唤 → Step 1；先确认本轮未开跑（无本轮 researcher 派工 / Dispatch Gate 记录），已派则忽略防重复。未答澄清按模板默认走，TL;DR 末尾标 `clarify_assumed`。
-- 环境不自动重唤 → 降级为"等你批准"（= 老行为，绝不卡死）。
+- 窗内用户回复 → 按意图走：改 → 重规划 / 批准·立即开始 → Step 1 / 不做 → 停。
+- 沉默到期 → Step 1。未答澄清按模板默认走，TL;DR 末尾标 `clarify_assumed`。
 
 方向已锁 / 批准 / 超时后自主推进，不再打断（例外仅：密钥泄露 / 武器 / 工具完全失败）。
 
@@ -66,18 +59,17 @@ description: 生产级多步深度研究。像资深顾问一样工作: 理解�
    - 维度 F — **换框重搜**：换一种分类框架重搜一遍
    **每条维度 ≥1 条 query 不含具体产品名**
    - 每个维度 ≥1 条搜索，其中 ≥1 条必须带 `freshness: "month"`（确保生态图有时效基线）
+   > 对应领域加载 `experts/<domain>.md` 获取搜索模板和权威来源白名单
 1.5 **子问题自审**：换一种框架看你的 sub_Q 拆分——若全属同一认知框架，拆分就是偏的。至少 1 个 sub_Q 用不同角度切入
 2. **Freshness & Coverage Sweep**（deep 必跑，standard 推荐）：派独立 sub-agent，任务只有两个——
    - **时效性扫描**：搜过去 90 天的相关新发布/新数据/新事件（不限于"产品发布"，含研究报告、政策变化、市场事件）
    - **覆盖度补盲**：检查 Discovery Bootstrap 结果中是否遗漏了特定地区/语言/阵营的来源（如仅覆盖英文源则补中文/其他语言源）
 3. **Dispatch**：显式确认 sub_Q 全部映射到 researcher 后，同帧 spawn 所有 researcher（standard ≥2, deep ≥4）；researcher ≥3 时优先用 Workflow 并行编排，让强模型自主发挥调度能力
-4. **REFLECT**：所有 researcher 返回后，按下方 REFLECT 强制清单逐项检查 → 判断是否饱和 → 决定是否 Round 2
+4. **REFLECT**：所有 researcher 返回后，按下方 REFLECT 强制清单逐项检查 → 判断是否饱和 → 决定是否 Round 2（Step 1 内部编号 Phase 2-4，Step 2 = Phase 5）
 4.5 **对撞**：列出 researcher 之间互相矛盾的发现。冲突数字优先官方一手源→多源交叉验证→降置信度标 `[conflict]`
 5. 重复直到不再发现实质性新信息。连续 2 轮无进展 → 收敛报告，标 `[incomplete]`
 
 每轮结束自问：「我本轮是否亲自搜了？」是 → 该轮作废，改派 sub-agent。违反 = `[no-subagent]` degraded。
-
-**断言必验**：概括性断言逐条搜反例。有→修正；无→标 `[ncf]`。
 
 **进度心跳**：每个 Phase 完成时允许 ≤1 句话通知（如"Phase 2 完成，进入 Phase 3"），非阻塞、不等回复。
 
@@ -85,11 +77,12 @@ description: 生产级多步深度研究。像资深顾问一样工作: 理解�
 
 | # | 检查项 | 通过标准 | 不通过动作 |
 |---|---|---|---|
-| 1 | **时效性** | 所有 finding 的 `source_date` 中，最新的一条在 N 天内（快速演进领域 N=30，稳定领域 N=180；主 agent 根据主题自行判断并声明 N 值） | 补搜：`"<topic> latest <current_month> <current_year>"` |
+| 1 | **时效性** | 最新 source_date 在 N 天内（技术/AI/加密 N=30，法律/能源/医疗 N=90，历史/哲学 N=180，不确定 N=90 并标 `n_value_rationale`） | 补搜：`"<topic> latest <current_month> <current_year>"` |
 | 2 | **覆盖度** | ≥2 个地理/语言市场的来源、≥2 类 source_type（official_doc / academic / industry / community） | 补搜缺维度的来源 |
 | 3 | **对立面** | 每个 sub_Q 的 findings 中 ≥1 条 `challenges_thesis: true` | 该 sub_Q 退回 researcher 补搜反方 |
 | 4 | **饱和判断** | 新增 finding 数 ≤ 前轮 30%，且无新方向 | 未饱和 → Round N+1 |
-| 5 | **决策盲区** | 自审决策链，自主补盲 | — |
+| 5 | **决策盲区** | 遗漏利益相关方？未考虑"不做"选项？时间窗口假设明确？ | — |
+| 6 | **断言必验** | 概括性断言逐条搜反例 | 有→修正；无→标 `[ncf]` |
 
 #### Researcher Prompt 模板（🔴 必须使用，禁止即兴写）
 
@@ -104,11 +97,11 @@ description: 生产级多步深度研究。像资深顾问一样工作: 理解�
 ## Query seeds (每个都搜，含至少1条反方query + 1条时效性query)
 1. "<正向搜索query>"
 2. "<正向搜索query>"
-3. "<反方/批评/失败案例 query>"
+3. "<反方/批评/失败案例 query>"（deep tier 需 ≥2 条反方 seed）
 4. "<时效性query — 搜过去90天新进展: topic + latest/recent + current_month current_year>"
 
 ## Budget
-≤15 WebSearch, ≤8 WebFetch。优先官方来源。Query seed 4（时效性）必须使用 freshness 过滤参数。
+≤20 WebSearch, ≤12 WebFetch。优先官方来源。Query seed 4（时效性）必须使用 freshness 过滤参数。
 **seed 不够则自主扩展**——4 条只是起点，不是上限。
 
 ## Tool Fallback
@@ -162,7 +155,7 @@ anysearch 失败 → 重试1次 → 仍失败 → WebSearch → 仍失败 → We
 
 | Tier | 触发信号 | 时间 | 子问题 | researcher | 总 extract | 总搜索 | 字数 |
 |---|---|---|---|---|---|---|---|
-| **fast** | "快速/大概/简要" + 子问题≤2 | 5-10min | 1-3 | 0 | ≥3 | ≥5 | 1000-2500 |
+| **fast** | "快速/大概/简要" + 子问题≤2 | 5-10min | 1-3 | 0（≥2 独立来源，标 `[fast-tier]`） | ≥3 | ≥5 | 1000-2500 |
 | **standard** | 默认 | 15-30min | 3-5 | ≥2 | ≥8 | ≥15 | 2500-5000 |
 | **deep** | "深度/系统/全面/对比" 或 子问题≥5 | 40-60min | 5-8 | ≥4 | ≥15 | ≥30 | 5000-12000 |
 
@@ -179,6 +172,7 @@ anysearch 失败 → 重试1次 → 仍失败 → WebSearch → 仍失败 → We
 | **Dispatch Gate** (Phase 2.8) | 必过（显式输出 checklist） | `[dispatch-gate-skipped]` |
 | **REFLECT Round 2** | 必跑（含 5 项强制清单） | `[single-round]` |
 | **Logic Self-Check**（6 项） | 必跑（60s，不 spawn sub-agent） | `[no-logic-check]` |
+> 6 项具体内容见 [`PLAYBOOK.md`](PLAYBOOK.md) Phase 4
 | **QA sub-agent**（fact-check + logic + DA 合并） | 推荐 | 跳过不标 degraded |
 | **LLM-judge** | `--eval` 或抽样 20% | 跳过不标 degraded |
 

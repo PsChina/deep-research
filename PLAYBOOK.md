@@ -1,7 +1,7 @@
 # PLAYBOOK (v5.6)
 
 执行手册。硬约束以 [`SKILL.md`](SKILL.md) 为准。版本演进见 [`CHANGELOG.md`](CHANGELOG.md)。
-
+> **Phase↔Step 映射**：Step 0(Phase 0) → Step 1(Phase 1-4) → Step 2(Phase 5-7)。Phase 编号沿用 PLAYBOOK 历史；硬约束以 SKILL.md 为准。
 ---
 
 ## 执行概览（三 Tier）
@@ -20,7 +20,7 @@ Phase 4/5: 跳过 (无 DA / 无 QA / 无 judge)
 
 ```
 Phase 0(30s): 3-4 sub_Q, decide→问 tech stack, howto→问 runtime, 没答记 clarify_assumed
-Phase 1(2m): step-back + Discovery Bootstrap + 方向闸(已锁直跑 / 待定 60s 窗口,见 SKILL Step 0)
+Phase 1(2m): step-back + Discovery Bootstrap + 方向闸(见 SKILL Step 0)
 Phase 2(5-10m): spawn ≥2 researcher, 每 prompt 含 sub_Q + seeds + 反方 + schema
 Phase 3(2-3m): REFLECT → 决定 Round 2
 Phase 4(5-8m): 综合 findings → outline → 写正文 (Toulmin ≥4), 每 2000 字 refresh evidence
@@ -33,11 +33,11 @@ Phase 7: 抽样 30% LLM-judge
 
 ```
 Phase 0(30s): ≥5 sub_Q, "深度/系统/全面/对比" 信号
-Phase 1(2m): step-back + Discovery Bootstrap (5 维度) + 方向闸(已锁直跑 / 待定 60s 窗口,见 SKILL Step 0)后自主推进
+Phase 1(2m): step-back + Discovery Bootstrap (6 维度) + 方向闸(见 SKILL Step 0)
 Phase 2.6(2m): Freshness & Coverage Sweep (独立 sub-agent)
 Phase 2.8(30s): Dispatch Gate — 显式输出 checklist 确认派工
 Phase 3(10-15m): spawn ≥4 researcher (强推理), max_searches=20, max_extracts=12
-Phase 3.7(3-5m): REFLECT 必跑, ≥2 round, Saturation Checklist 5 项全 ✅ 才放行
+Phase 3.7(3-5m): REFLECT 必跑, ≥2 round, 按 SKILL REFLECT 清单 5+1 项
 Phase 4(10-15m): 综合 + outline + Toulmin 6 ≥4 + Rebuttal ≥3 + Logic Self-Check 6 项
 Phase 5(3-5m): QA sub-agent (推荐)
 Phase 6: frontmatter + verify.sh scan
@@ -54,7 +54,7 @@ Phase 7: 抽样 20% 或 --eval LLM-judge
 
 ### Discovery Bootstrap（生态/市场 topic 必跑）
 
-按 SKILL.md 的 A-E 五维度批量搜索建图。**禁止凭记忆枚举玩家**。跳过 = `[no-discovery-bootstrap]` degraded。
+按 SKILL.md 的 A-F 六维度批量搜索建图。**禁止凭记忆枚举玩家**。跳过 = `[no-discovery-bootstrap]` degraded。
 
 ### 模板特定默认问
 
@@ -128,7 +128,8 @@ Phase 3 搜索开始**前**，主 agent 显式输出：
 3. 生成 Round 2 子问题（比 Round 1 更窄更深）
 4. deep tier 必跑 ≥2 轮
 
-### Saturation Checklist（5 项全 ✅ 才停止）
+### Saturation Checklist → 统一使用 SKILL.md REFLECT 强制清单（5+1 项）
+> 以下为历史参考，与 SKILL REFLECT 不一致时以后者为准：
 
 | 项 | 判据 |
 |---|---|
